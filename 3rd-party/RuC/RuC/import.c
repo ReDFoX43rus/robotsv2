@@ -57,15 +57,25 @@ int szof(int);
 #define wrong_string_init    17
 #define printf_runtime_crash 18
 #define init_err             19
+#define robotsv2_too_long_array 20
 
-int g, xx, iniproc, maxdisplg, wasmain;
-int reprtab[MAXREPRTAB], rp, identab[MAXIDENTAB], id, modetab[MAXMODETAB], md;
-int mem[MAXMEMSIZE], functions[FUNCSIZE], funcnum;
-int threads[NUMOFTHREADS]; //, curthread, upcurthread;
-int procd, iniprocs[INIPROSIZE], base = 0, adinit, NN;
-FILE *input;
+static int g, xx, iniproc, maxdisplg, wasmain;
+static int reprtab[MAXREPRTAB], rp, identab[MAXIDENTAB], id, modetab[MAXMODETAB], md;
+static int mem[MAXMEMSIZE], functions[FUNCSIZE], funcnum;
+static int threads[NUMOFTHREADS]; //, curthread, upcurthread;
+static int procd, iniprocs[INIPROSIZE], base = 0, adinit, NN;
+static FILE *input;
 //char sem_print[] = "sem_print", sem_debug[] = "sem_debug";
-sem_t *sempr, *semdeb;
+static sem_t *sempr, *semdeb;
+
+static int motor_power = 0;
+static int motor_n = 0;
+static int max_array_size = 16;
+static int sensortype = 0;
+static int array_ptr = 0;
+static int array_size = 0;
+extern void servo_power(int, int);
+extern int handle_sensor(int, const int *);
 
 void runtimeerr(int e, int i, int r)
 {
@@ -129,6 +139,10 @@ void runtimeerr(int e, int i, int r)
         case init_err:
             printf("количество элементов инициализации %i не совпадает с количеством элементов %i массива\n", i, r);
             break;
+
+		case robotsv2_too_long_array:
+			printf("слишком длинный массив для датчика\n");
+			break;
 
         default:
             ;
@@ -493,49 +507,36 @@ void* interpreter(void* pcPnt)
                 mem[++x] = numTh;
                 break;
 
-    #ifdef ROBOT
-
             case SETMOTORC:
-            {
-                int n, r;
-                r = mem[x--];
-                n = mem[x--];
-                if (n < 1 || n > 4)
-                    runtimeerr(wrong_motor_num, n, 0);
-                if (r < -100 || r > 100)
-                    runtimeerr(wrong_motor_pow, n, r);
-                memset(i2ccommand, '\0', I2CBUFFERSIZE);
-                printf("i2cset -y 2 0x48 0x%x 0x%x b\n", 0x14 + n - 1, r);
-                snprintf(i2ccommand, I2CBUFFERSIZE, "i2cset -y 2 0x48 0x%x 0x%x b", 0x14 + n - 1, r);
-                system(i2ccommand);
-            }
-                break;
+				motor_power = mem[x--];
+				motor_n = mem[x--];
+
+				servo_power(motor_n, motor_power);
+
+				break;
 
             case GETDIGSENSORC:
-            {
-                int n = mem[x];
-                if (n < 1 || n > 2)
-                    runtimeerr(wrong_digsensor_num, n, 0);
-                if (n == 1)
-                    fscanf(f1, "%i", &i);
-                else
-                    fscanf(f2, "%i", &i);
-                mem[x] = i;
-            }
-                break;
+				sensortype = mem[x--];
+				array_ptr = mem[x];
+
+				array_size = mem[array_ptr - 1];
+				if(array_size >= max_array_size)
+					return;
+
+				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
+				break;
 
             case GETANSENSORC:
-            {
-                int n = mem[x];
-                if (n < 1 || n > 6)
-                    runtimeerr(wrong_ansensor_num, n, 0);
-                memset(i2ccommand, '\0', I2CBUFFERSIZE);
-                printf("i2cget -y 2 0x48 0x%x\n", 0x26 - n);
-                snprintf(i2ccommand, I2CBUFFERSIZE, "i2cget -y 2 0x48 0x%x", 0x26 - n);
-                mem[x] = rungetcommand(i2ccommand);
-            }
-                break;
-    #endif
+				sensortype = mem[x--];
+				array_ptr = mem[x];
+
+				array_size = mem[array_ptr - 1];
+				if(array_size >= max_array_size)
+					return;
+
+				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
+				break;
+
             case FUNCBEG:
                 pc = mem[pc+1];
                 break;

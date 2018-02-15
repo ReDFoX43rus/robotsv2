@@ -1,8 +1,11 @@
 #ifndef SERVO_SERVO
 #define SERVO_SERVO
 
+#include "driver/gpio.h"
+
 class CServo{
 public:
+	CServo(){};
 	CServo(gpio_num_t IN1, gpio_num_t IN2, gpio_num_t IN3, gpio_num_t IN4, gpio_num_t ENA, gpio_num_t ENB);
 	// typedef enum {FORWARD, BACKWARD} direction_t;
 	// typedef enum {LEFT_HAND, RIGHT_HAND} side_t;
@@ -14,6 +17,8 @@ public:
 	void Stop();
 
 private:
+	bool m_Inited;
+
 	gpio_num_t m_IN1;
 	gpio_num_t m_IN2;
 	gpio_num_t m_IN3;

@@ -1,5 +1,3 @@
-//#include <stdio.h>
-
 #include "driver/ledc.h"
 #include "esp_err.h"
 #include "servo/servo.h"
@@ -21,9 +19,13 @@ CServo::CServo(gpio_num_t IN1, gpio_num_t IN2, gpio_num_t IN3, gpio_num_t IN4, g
 	gpio_set_level(ENA, 1);
 	gpio_set_level(ENB, 1);
 
+	m_Inited = true;
 }
 
 void CServo::Start(side_t side, direction_t direction, int power){
+	if(!m_Inited)
+		return;
+
 	int channel;
 	gpio_num_t engine;
 	if (side == LEFT_HAND){
@@ -80,6 +82,9 @@ void CServo::Start(side_t side, direction_t direction, int power){
 }
 
 void CServo::Stop(){
+	if(!m_Inited)
+		return;
+
 	gpio_set_level(m_ENA, 0);
 	gpio_set_level(m_ENB, 0);
 
