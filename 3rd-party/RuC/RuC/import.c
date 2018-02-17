@@ -516,8 +516,8 @@ void* interpreter(void* pcPnt)
 				break;
 
             case GETDIGSENSORC:
-				sensortype = mem[x--];
-				array_ptr = mem[x];
+				array_ptr = mem[x--];
+				sensortype = mem[x];
 
 				array_size = mem[array_ptr - 1];
 				if(array_size >= max_array_size)
@@ -527,8 +527,8 @@ void* interpreter(void* pcPnt)
 				break;
 
             case GETANSENSORC:
-				sensortype = mem[x--];
-				array_ptr = mem[x];
+				array_ptr = mem[x--];
+				sensortype = mem[x];
 
 				array_size = mem[array_ptr - 1];
 				if(array_size >= max_array_size)

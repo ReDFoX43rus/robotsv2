@@ -2,10 +2,6 @@
 #include "esp_intr_alloc.h"
 #include "stddef.h"
 
-CrashSensor::CrashSensor(gpio_num_t trigger){
-	m_Trigger = trigger;
-}
-
 CrashSensor::~CrashSensor(){
 	Disable();
 }

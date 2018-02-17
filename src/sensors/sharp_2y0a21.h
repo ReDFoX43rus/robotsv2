@@ -7,9 +7,10 @@
 
 class SHARP_2Y0A21  {
 public:
-	SHARP_2Y0A21(int pin);
+	SHARP_2Y0A21();
 	~SHARP_2Y0A21();
 	int GetDistance();
+	void ChangePin(int pin);
 
 private:
 	int m_pin;

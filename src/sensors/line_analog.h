@@ -5,10 +5,12 @@
 
 class CLineAn{
 public:
-	CLineAn(int pin): m_Pin(pin){}
+	CLineAn();
+	~CLineAn();
 
-	int GetData();
+	int GetData(int pin);
 private:
+	CAdc *m_Adc;
 	int m_Pin;
 };
 

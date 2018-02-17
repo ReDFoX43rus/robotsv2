@@ -4,14 +4,20 @@
 #include "adc.h"
 
 
-SHARP_2Y0A21::SHARP_2Y0A21(int pin) {
+SHARP_2Y0A21::SHARP_2Y0A21() {
 	adc = new CAdc();
-	adc->SetupAdc(pin, 3000);
-	m_pin=pin;
 }
 
 SHARP_2Y0A21::~SHARP_2Y0A21(){
 	delete adc;
+}
+
+void SHARP_2Y0A21::ChangePin(int pin){
+	if(pin == m_pin)
+		return;
+
+	adc->SetupAdc(pin, 3000);
+	m_pin = pin;
 }
 
 int SHARP_2Y0A21::GetDistance() {

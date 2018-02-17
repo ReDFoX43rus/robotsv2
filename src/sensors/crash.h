@@ -5,9 +5,9 @@
 
 class CrashSensor{
 public:
-	CrashSensor(gpio_num_t trigger);
 	~CrashSensor();
 
+	CrashSensor &ChangeTrigger(gpio_num_t trigger) {m_Trigger = trigger; return *this;}
 	void Disable();
 	CrashSensor &Setup();
 	void SetCallbackFunction(gpio_isr_t Callback);

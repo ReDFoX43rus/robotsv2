@@ -6,7 +6,10 @@
 
 class CColorSensor{
 public:
-	CColorSensor(gpio_num_t s0, gpio_num_t s1, gpio_num_t s2, gpio_num_t s3, adc1_channel_t out);
+	CColorSensor();
+	~CColorSensor();
+
+	void Setup(gpio_num_t s0, gpio_num_t s1, gpio_num_t s2, gpio_num_t s3, adc1_channel_t out);
 
 	enum Color{
 		RED,
@@ -23,7 +26,7 @@ private:
 	gpio_num_t m_S3;
 	adc1_channel_t m_Out;
 
-	CAdc adc;
+	CAdc *m_Adc;
 };
 
 #endif /* end of include guard: SENSORS_COLOR_H */
