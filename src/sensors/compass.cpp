@@ -30,13 +30,13 @@ compass_data_t CHMC5883L::GetPosition(){
 
 	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, HMC_ADDR_READ, 1);
-	i2c_master_read_byte(cmd, data,   0); //"Data Output X MSB Register"
-	i2c_master_read_byte(cmd, data+1, 0); //"Data Output X LSB Register"
-	i2c_master_read_byte(cmd, data+2, 0); //"Data Output Z MSB Register"
-	i2c_master_read_byte(cmd, data+3, 0); //"Data Output Z LSB Register"
-	i2c_master_read_byte(cmd, data+4, 0); //"Data Output Y MSB Register"
-	i2c_master_read_byte(cmd, data+5, 1); //"Data Output Y LSB Register "
+	i2c_master_write_byte(cmd, HMC_ADDR_READ, I2C_MASTER_NACK);
+	i2c_master_read_byte(cmd, data,   I2C_MASTER_ACK); //"Data Output X MSB Register"
+	i2c_master_read_byte(cmd, data+1, I2C_MASTER_ACK); //"Data Output X LSB Register"
+	i2c_master_read_byte(cmd, data+2, I2C_MASTER_ACK); //"Data Output Z MSB Register"
+	i2c_master_read_byte(cmd, data+3, I2C_MASTER_ACK); //"Data Output Z LSB Register"
+	i2c_master_read_byte(cmd, data+4, I2C_MASTER_ACK); //"Data Output Y MSB Register"
+	i2c_master_read_byte(cmd, data+5, I2C_MASTER_NACK); //"Data Output Y LSB Register "
 	i2c_master_stop(cmd);
 	i2c_master_cmd_begin_safe(I2C_NUM_0, cmd, 1000/portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
@@ -60,9 +60,9 @@ void CHMC5883L::WriteReg(uint8_t reg, uint8_t data){
 	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
 
-	i2c_master_write_byte(cmd, HMC_ADDR_WRITE, 1);
-	i2c_master_write_byte(cmd, reg, 1);
-	i2c_master_write_byte(cmd, data, 1);
+	i2c_master_write_byte(cmd, HMC_ADDR_WRITE, I2C_MASTER_NACK);
+	i2c_master_write_byte(cmd, reg, I2C_MASTER_NACK);
+	i2c_master_write_byte(cmd, data, I2C_MASTER_NACK);
 
 	i2c_master_stop(cmd);
 	i2c_master_cmd_begin_safe(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);
@@ -73,8 +73,8 @@ void CHMC5883L::SetReg(uint8_t reg){
 	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
 
-	i2c_master_write_byte(cmd, (0x1E << 1) | I2C_MASTER_WRITE, 1);
-	i2c_master_write_byte(cmd, reg, 1);
+	i2c_master_write_byte(cmd, (0x1E << 1) | I2C_MASTER_WRITE, I2C_MASTER_NACK);
+	i2c_master_write_byte(cmd, reg, I2C_MASTER_NACK);
 
 	i2c_master_stop(cmd);
 	i2c_master_cmd_begin_safe(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);

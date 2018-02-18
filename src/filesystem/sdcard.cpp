@@ -13,8 +13,7 @@ CSDCard::CSDCard(int miso, int mosi, int clk, int cs, int wp, size_t maxFiles){
 	m_Wp = (gpio_num_t)wp;
 	m_MaxFiles = maxFiles;
 
-	m_Host = SDSPI_HOST_DEFAULT();
-	m_SlotConfig = SDSPI_SLOT_CONFIG_DEFAULT();
+	m_Host = {SDMMC_HOST_FLAG_SPI, HSPI_HOST, SDMMC_FREQ_DEFAULT, 3.3f, sdspi_host_init, NULL, NULL, sdspi_host_set_card_clk, sdspi_host_do_transaction, sdspi_host_deinit, 0};
 	m_SlotConfig.gpio_miso	= m_Miso;
 	m_SlotConfig.gpio_mosi	= m_Mosi;
 	m_SlotConfig.gpio_sck	= m_Clk;
