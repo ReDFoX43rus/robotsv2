@@ -5,7 +5,8 @@
 #include "unistd.h"
 
 void CmdSharpHandler(int argc, char **argv){
-	SHARP_2Y0A21 sensor = SHARP_2Y0A21(ADC1_CHANNEL_4);
+	SHARP_2Y0A21 sensor = SHARP_2Y0A21();
+	sensor.ChangePin(ADC1_CHANNEL_4);
 	while (true) {
 		int distance = sensor.GetDistance();
 		uart << "Distance: " << distance << endl;

@@ -3,7 +3,7 @@
 
 #include "driver/gpio.h"
 
-static CrashSensor sensor = CrashSensor(GPIO_NUM_4);
+static CrashSensor sensor = CrashSensor().ChangeTrigger(GPIO_NUM_4);
 
 void CrashCallback(void*){
 	uart << "Crash occurred :c" << endl;

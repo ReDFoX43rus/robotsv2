@@ -5,7 +5,7 @@
 
 class CLineDig{
 public:
-	int GetData(gpio_num_t output));
+	int GetData(gpio_num_t output);
 };
 
 #endif /* end of include guard: SENSORS_LINE_DIG_H */
