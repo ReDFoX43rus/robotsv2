@@ -4,4 +4,4 @@ COMPONENT_LDFLAGS += -L$(BUILD_DIR_BASE)/wifiio -lwifiio
 COMPONENT_LINKER_DEPS += 
 COMPONENT_SUBMODULES += 
 COMPONENT_LIBRARIES += wifiio
-wifiio-build: 
+component-wifiio-build: 

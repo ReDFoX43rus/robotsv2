@@ -4,4 +4,4 @@ COMPONENT_LDFLAGS += -L$(BUILD_DIR_BASE)/sensors -lsensors
 COMPONENT_LINKER_DEPS += 
 COMPONENT_SUBMODULES += 
 COMPONENT_LIBRARIES += sensors
-sensors-build: 
+component-sensors-build: 

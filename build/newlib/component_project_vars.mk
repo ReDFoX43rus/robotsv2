@@ -4,4 +4,4 @@ COMPONENT_LDFLAGS += -L$(BUILD_DIR_BASE)/newlib $(PROJECT_PATH)/3rd-party/esp-id
 COMPONENT_LINKER_DEPS += $(PROJECT_PATH)/3rd-party/esp-idf/components/newlib/lib/libc.a $(PROJECT_PATH)/3rd-party/esp-idf/components/newlib/lib/libm.a
 COMPONENT_SUBMODULES += 
 COMPONENT_LIBRARIES += newlib
-newlib-build: 
+component-newlib-build: 

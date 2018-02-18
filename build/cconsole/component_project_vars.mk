@@ -4,4 +4,4 @@ COMPONENT_LDFLAGS += -L$(BUILD_DIR_BASE)/cconsole -lcconsole
 COMPONENT_LINKER_DEPS += 
 COMPONENT_SUBMODULES += 
 COMPONENT_LIBRARIES += cconsole
-cconsole-build: 
+component-cconsole-build: 
