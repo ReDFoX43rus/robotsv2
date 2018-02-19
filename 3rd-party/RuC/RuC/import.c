@@ -58,6 +58,7 @@ int szof(int);
 #define printf_runtime_crash 18
 #define init_err             19
 #define robotsv2_too_long_array 20
+#define robotsv2_wrong_sensor_type 21
 
 static int g, xx, maxdisplg, wasmain;
 static int reprtab[MAXREPRTAB], rp, identab[MAXIDENTAB], id, modetab[MAXMODETAB], md;
@@ -147,6 +148,9 @@ void runtimeerr(int e, int i, int r)
 		case robotsv2_too_long_array:
 			printf("слишком длинный массив для датчика\n");
 			break;
+
+		case robotsv2_wrong_sensor_type:
+			printf("неправильный номер датчика %i\n", i);
 
         default:
             ;
@@ -529,13 +533,15 @@ void* interpreter(void* pcPnt)
 
             case GETDIGSENSORC:
 				array_ptr = mem[x--];
-				sensortype = mem[x];
+				sensortype = -mem[x]; // 0 indicate to handle_sensor that it's digital sensor
 
 				array_size = mem[array_ptr - 1];
 				if(array_size >= max_array_size)
 					runtimeerr(robotsv2_too_long_array, 0, 0);
 
 				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
+				if(mem[x] == -1)
+					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
 				break;
 
             case GETANSENSORC:
@@ -547,6 +553,8 @@ void* interpreter(void* pcPnt)
 					runtimeerr(robotsv2_too_long_array, 0, 0);
 
 				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
+				if(mem[x] == -1)
+					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
 				break;
 
             case FUNCBEG:

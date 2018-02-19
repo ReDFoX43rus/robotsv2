@@ -23,8 +23,8 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 		uart << data[i] << " ";
 	uart << endl;
 
-	if(sensor_id < 0 || sensor_id >= MAX_SENSORS)
-		return 0;
+	if(sensor_id >= MAX_SENSORS)
+		return -1;
 
 	static CColorSensor color_sensor;
 	static CHMC5883L compass;
@@ -94,6 +94,9 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 			sharp_sensor.ChangePin(data[0]);
 			return sharp_sensor.GetDistance();
 		}
+
+		default:
+			return -1;
 	}
 
 	return 0;
