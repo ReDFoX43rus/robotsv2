@@ -8,15 +8,9 @@ import time
 
 device = "/dev/ttyUSB0"
 
-try:
-	opts, args = getopt.getopt(sys.argv[1:], "d:")
-except getopt.GetoptError as err:
-	print("usage: file_send.py [-d <device>]")
-	sys.exit(2)
-
-for opt, arg in opts:
-	if opt == "-d":
-		device = arg
+if len(sys.argv) != 2:
+	print "file_send.py filename"
+	sys.exit()
 
 tty = serial.Serial(device, 115200)
 
@@ -27,11 +21,12 @@ def sendFile(filename):
 	size = sfile.tell()
 	sfile.seek(0, os.SEEK_SET)
 
-	tty.write("filereceive " + "/fat/" + filename + " " + str(size) + "\n")
+	print "Filename: " + os.path.basename(filename) 
+	tty.write("filereceive " + "/fat/" + os.path.basename(filename) + " " + str(size) + "\n")
 
 	time.sleep(0.5)
 
-	# Check return value
+	# TODO: Check return value
 
 	block = size
 	while size > 0:
@@ -43,6 +38,6 @@ def sendFile(filename):
 
 	sfile.close()
 
-sendFile("export.txt")
+sendFile(sys.argv[1])
 
 tty.close()

@@ -392,7 +392,7 @@ int dsp(int di, int l)
 	return di < 0 ? g - di : l + di;
 }
 
-void* interpreter(void* pcPnt)
+void interpreter(void* pcPnt)
 {
 	int l, x, origpc = *((int*) pcPnt), numTh = t_getThNum();
 	int N, bounds[100], d,from, prtype, cur0, pc = abs(origpc);
@@ -1580,7 +1580,6 @@ void* interpreter(void* pcPnt)
 				runtimeerr(wrong_kop, mem[pc-1], numTh);
 		}
 	}
-	return NULL;
 }
 
 int ruc_read_int(FILE* file, int stopn){
@@ -1606,10 +1605,10 @@ void ruc_import(const char *filename)
 {
 	int i, pc;
 
-	input = fopen("/fat/export.txt", "r");
+	input = fopen(filename, "r");
 
 	if(!input){
-		printf("Не могу открыть файл %s для интерпретирования\n", filename);
+		printf("Cannot open file: %s\n", filename);
 		return;
 	}
 

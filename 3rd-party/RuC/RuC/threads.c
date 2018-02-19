@@ -9,6 +9,8 @@
 #include "cpthread/condvar.h"
 #include "cpthread/rwlock.h"
 
+#include "freertos/task.h"
+
 #define TRUE 1
 #define FALSE 0
 
@@ -18,7 +20,8 @@
 
 struct __threadInfo
 {
-	pthread_t th;
+	//pthread_t th;
+	TaskHandle_t handle;
 	int isDetach;
 
 	pthread_cond_t cond;
@@ -46,7 +49,8 @@ void t_init()
 		perror("t_init : pthread_rwlock_init of __lock_t_create failed");
 		exit(EXIT_FAILURE);
 	}
-	__threads[0].th = pthread_self();
+	//__threads[0].th = pthread_self();
+	__threads[0].handle = xTaskGetCurrentTaskHandle();
 	__threads[0].isDetach = TRUE;
 
 	res = pthread_cond_init(&(__threads[0].cond), NULL);
@@ -70,9 +74,8 @@ void t_init()
 	}
 }
 
-int __t_create(pthread_attr_t *attr, void* (*func)(void *), void *arg, int isDetach)
+int __t_create(pvoid (*func)(void *), void *arg, int isDetach)
 {
-	pthread_t th;
 	int retVal;
 	int res = pthread_rwlock_wrlock(&__lock_t_create);
 	if (res != 0)
@@ -81,8 +84,10 @@ int __t_create(pthread_attr_t *attr, void* (*func)(void *), void *arg, int isDet
 		exit(EXIT_FAILURE);
 	}
 
-	res = pthread_create(&th, attr, func, arg);
-	if (res != 0)
+	//res = pthread_create(&th, attr, func, arg);
+	TaskHandle_t xHandle;
+	BaseType_t result = xTaskCreate(func, NULL, STACK_SIZE, arg, 1 | portPRIVILEGE_BIT, &xHandle);
+	if (result != pdPASS)
 	{
 		perror("t_create : Thread creation failed");
 		exit(EXIT_FAILURE);
@@ -103,7 +108,7 @@ int __t_create(pthread_attr_t *attr, void* (*func)(void *), void *arg, int isDet
 		exit(EXIT_FAILURE);
 	}
 
-	__threads[__countTh].th = th;
+	__threads[__countTh].handle = xHandle;
 	__threads[__countTh].isDetach = isDetach;
 
 	res = pthread_cond_init(&(__threads[__countTh].cond), NULL);
@@ -132,12 +137,12 @@ int __t_create(pthread_attr_t *attr, void* (*func)(void *), void *arg, int isDet
 	return retVal;
 }
 
-int t_create_inner(void* (*func)(void *), void *arg)
+int t_create_inner(void (*func)(void *), void *arg)
 {
-	return __t_create(NULL, func, arg, FALSE);
+	return __t_create(func, arg, FALSE);
 }
 
-int t_createDetached(void* (*func)(void *))
+/*int t_createDetached(void* (*func)(void *))
 {
 	pthread_attr_t attr;
 
@@ -156,11 +161,11 @@ int t_createDetached(void* (*func)(void *))
 	}
 
 	return __t_create(&attr, func, NULL, TRUE);
-}
+}*/
 
 void t_exit()
 {
-	pthread_exit(NULL);
+	vTaskDelete(NULL);
 }
 
 void t_join(int numTh)
@@ -176,7 +181,7 @@ void t_join(int numTh)
 	{
 		if (!__threads[numTh].isDetach)
 		{
-			pthread_t th = __threads[numTh].th;
+			TaskHandle_t xHandle = __threads[numTh].handle;
 
 			res = pthread_rwlock_unlock(&__lock_t_create);
 			if (res != 0)
