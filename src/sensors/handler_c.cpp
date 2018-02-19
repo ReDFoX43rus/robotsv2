@@ -102,3 +102,13 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 inline void crash_sensor_callback(void*){
 	crash_notifier = true;
 }
+
+extern "C" void set_voltage(int pin, int level){
+	uart << "pin: " << pin << " level: " << level << endl;
+
+	gpio_num_t gpio = (gpio_num_t)pin;
+
+	gpio_pad_select_gpio(gpio);
+	gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
+	gpio_set_level(gpio, level);
+}

@@ -59,14 +59,15 @@ int szof(int);
 #define init_err             19
 #define robotsv2_too_long_array 20
 
-static int g, xx, iniproc, maxdisplg, wasmain;
+static int g, xx, maxdisplg, wasmain;
 static int reprtab[MAXREPRTAB], rp, identab[MAXIDENTAB], id, modetab[MAXMODETAB], md;
 static int mem[MAXMEMSIZE], functions[FUNCSIZE], funcnum;
 static int threads[NUMOFTHREADS]; //, curthread, upcurthread;
-static int procd, iniprocs[INIPROSIZE], base = 0, adinit, NN;
+static int base = 0, adinit, NN;
 static FILE *input;
 //char sem_print[] = "sem_print", sem_debug[] = "sem_debug";
-static sem_t *sempr, *semdeb;
+static sem_t sempr;
+static int sempr_inited = 0;
 
 static int motor_power = 0;
 static int motor_n = 0;
@@ -74,8 +75,11 @@ static int max_array_size = 16;
 static int sensortype = 0;
 static int array_ptr = 0;
 static int array_size = 0;
+static int level = 0;
+static int pin = 0;
 extern void servo_power(int, int);
 extern int handle_sensor(int, const int *);
+extern void set_voltage(int, int);
 
 void runtimeerr(int e, int i, int r)
 {
@@ -507,11 +511,19 @@ void* interpreter(void* pcPnt)
                 mem[++x] = numTh;
                 break;
 
-            case SETMOTORC:
+            case SETMOTORC: {
 				motor_power = mem[x--];
 				motor_n = mem[x--];
 
 				servo_power(motor_n, motor_power);
+			}
+				break;
+
+			case VOLTAGEC:
+				level = mem[x--];
+				pin = mem[x--];
+
+				set_voltage(pin, level);
 
 				break;
 
@@ -521,7 +533,7 @@ void* interpreter(void* pcPnt)
 
 				array_size = mem[array_ptr - 1];
 				if(array_size >= max_array_size)
-					return;
+					runtimeerr(robotsv2_too_long_array, 0, 0);
 
 				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
 				break;
@@ -532,7 +544,7 @@ void* interpreter(void* pcPnt)
 
 				array_size = mem[array_ptr - 1];
 				if(array_size >= max_array_size)
-					return;
+					runtimeerr(robotsv2_too_long_array, 0, 0);
 
 				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
 				break;
@@ -543,15 +555,16 @@ void* interpreter(void* pcPnt)
             case PRINT:
             {
                 int t;
-                sem_wait(sempr);
+                sem_wait(&sempr);
                 t = mem[pc++];
                 x -= szof(t);
                 auxprint(x+1, t, 0, '\n');
-                sem_post(sempr);
+
+				sem_post(&sempr);
             }
                 break;
             case PRINTID:
-                sem_wait(sempr);
+                sem_wait(&sempr);
                 i = mem[pc++];              // ссылка на identtab
                 prtype = identab[i+2];
                 r = identab[i+1] + 2;       // ссылка на reprtab
@@ -563,7 +576,7 @@ void* interpreter(void* pcPnt)
                     auxprint(dsp(identab[i+3], l), prtype, '\n', '\n');
                 else
                     auxprint(dsp(identab[i+3], l), prtype, ' ', '\n');
-                sem_post(sempr);
+                sem_post(&sempr);
                 break;
 
             /* Ожидает указатель на форматную строку на верхушке стека
@@ -574,15 +587,15 @@ void* interpreter(void* pcPnt)
             case PRINTF:
             {
                 int sumsize, strbeg;
-                sem_wait(sempr);
+                sem_wait(&sempr);
                 sumsize = mem[pc++];
                 strbeg = mem[x--];
                 auxprintf(strbeg, x -= sumsize);
-                sem_post(sempr);
+                sem_post(&sempr);
             }
                 break;
             case GETID:
-                sem_wait(sempr);
+                sem_wait(&sempr);
                 i = mem[pc++];              // ссылка на identtab
                 prtype = identab[i+2];
                 r = identab[i+1] + 2;       // ссылка на reprtab
@@ -591,7 +604,7 @@ void* interpreter(void* pcPnt)
                 while (reprtab[r] != 0);
                 printf("\n");
                 auxget(dsp(identab[i+3], l), prtype);
-                sem_post(sempr);
+                sem_post(&sempr);
                 break;
             case ABSIC:
                 mem[x] = abs(mem[x]);
@@ -1580,7 +1593,7 @@ int ruc_read_int(FILE* file, int stopn){
 	int result = 0;
 	char buff = 48;
 	char tmp = 0;
-	while(((tmp = buff-48) < 10 && tmp >= 0) || buff == '-' || (buff == '\n' && !stopn)){
+	while(((tmp = buff-48) < 10) || buff == '-' || (buff == '\n' && !stopn)){
 		if(buff != '\n'){
 			if(buff != '-'){
 			result *= 10;
@@ -1596,7 +1609,7 @@ int ruc_read_int(FILE* file, int stopn){
 
 void ruc_import(const char *filename)
 {
-    int i, l, pc, x;
+    int i, pc;
 
 	#ifdef ROBOT
 	    f1 = fopen(JD1, "r");                       // файлы цифровых датчиков
@@ -1680,9 +1693,12 @@ void ruc_import(const char *filename)
 
     //sem_unlink(sem_print);
     //sempr = sem_open(sem_print, O_CREAT, S_IRUSR | S_IWUSR, 1);
-	if(sempr)
+	if(sempr_inited){
 		sem_destroy(&sempr);
+		sempr_inited = 0;
+	}
 	sem_init(&sempr, 1, 0);
+	sempr_inited = 1;
     t_init();
     interpreter(&pc);                      // номер нити главной программы 0
     t_destroy();

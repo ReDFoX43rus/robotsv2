@@ -22,6 +22,7 @@ enum SENSOR_IDS{
 };
 
 int handle_sensor(int sensor_id, const int *data);
+void set_voltage(int pin, int level);
 
 }
 
