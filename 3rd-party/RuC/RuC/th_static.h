@@ -4,6 +4,11 @@
 
 #include <fcntl.h>
 
+#ifndef configUSE_TASK_NOTIFICATIONS
+#define configUSE_TASK_NOTIFICATIONS 1
+#endif
+#include "freertos/task.h"
+
 struct msg_info
 {
 	int numTh;
@@ -12,12 +17,13 @@ struct msg_info
 void t_init();
 void t_destroy();
 
-int t_create_inner(void* (*func)(void*), void *arg);
-int t_create(void* (*func)(void*));
+int t_create_inner(void (*func)(void *), void *arg);
+int t_create(void (*func)(void*));
 
 int t_createDetached(void* (*func)(void*));
 
 void t_exit();
+void t_notify_finished(void);
 void t_join(int numTh);
 int t_getThNum();
 void t_sleep(int miliseconds);

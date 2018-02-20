@@ -18,10 +18,7 @@ static inline void crash_sensor_callback(void*);
 extern "C" int handle_sensor(int sensor_id, const int *data){
 	uart << "sensor_id: " << sensor_id << endl;
 
-	uart << "data: ";
-	for(int i = 0; i < 3; i++)
-		uart << data[i] << " ";
-	uart << endl;
+	uart << "data: " << *data << endl;
 
 	if(sensor_id >= MAX_SENSORS)
 		return -1;

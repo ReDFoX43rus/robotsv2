@@ -43,11 +43,7 @@ void CmdRucHandler(int argc, char **argv){
 		return;
 	}
 
-	pthread_t ruc_thread;
-	if(pthread_create(&ruc_thread, NULL, ruc_import, (void*)argv[1])) {
-		uart << "Error creating main ruc thread" << endl;
-		return;
-	}
+	ruc_import(argv[1]);
 
 	/*if(pthread_join(ruc_thread, NULL)) {
 		uart << "Error joining thread" << endl;

@@ -9,7 +9,7 @@
 #include "cpthread/condvar.h"
 #include "cpthread/rwlock.h"
 
-#include "freertos/task.h"
+#define STACK_SIZE 4096
 
 #define TRUE 1
 #define FALSE 0
@@ -28,6 +28,8 @@ struct __threadInfo
 	pthread_mutex_t lock;
 	struct msg_info msgs[__COUNT_MSGS_FOR_TH];
 	int countMsg;
+
+	struct __threadInfo *parent;
 };
 
 static int __countTh = 1;
@@ -39,6 +41,8 @@ static sem_t __sems[__COUNT_SEM];
 static pthread_rwlock_t __lock_t_create;
 static pthread_rwlock_t __lock_t_sem_create;
 
+static int inited = 0;
+static sem_t utilsem;
 //void perror(const char *str);
 
 void t_init()
@@ -52,6 +56,7 @@ void t_init()
 	//__threads[0].th = pthread_self();
 	__threads[0].handle = xTaskGetCurrentTaskHandle();
 	__threads[0].isDetach = TRUE;
+	__threads[0].parent = NULL;
 
 	res = pthread_cond_init(&(__threads[0].cond), NULL);
 	if (res != 0)
@@ -72,10 +77,35 @@ void t_init()
 		perror("t_init : pthread_rwlock_init of __lock_t_sem_create failed");
 		exit(EXIT_FAILURE);
 	}
+
+	if(!inited)
+		sem_init(&utilsem, 1, 0);
+
+	printf("t_init done\n");
+	inited = 1;
 }
 
-int __t_create(pvoid (*func)(void *), void *arg, int isDetach)
+int __t_create(void (*func)(void *), void *arg, int isDetach)
 {
+	int current_th_num = t_getThNum();
+	struct __threadInfo* currentThread = NULL;
+
+	if(pthread_rwlock_rdlock(&__lock_t_create)){
+		perror("__t_create : pthread_rwlock_rdlock create failed");
+		exit(EXIT_FAILURE);
+	}
+
+	sem_wait(&utilsem);
+	printf("current th num: %d\n", current_th_num);
+	sem_post(&utilsem);
+
+	currentThread = &__threads[current_th_num];
+
+	if(pthread_rwlock_unlock(&__lock_t_create)){
+		perror("__t_create : pthread_rwlock_unlock failed");
+		exit(EXIT_FAILURE);
+	}
+
 	int retVal;
 	int res = pthread_rwlock_wrlock(&__lock_t_create);
 	if (res != 0)
@@ -85,8 +115,9 @@ int __t_create(pvoid (*func)(void *), void *arg, int isDetach)
 	}
 
 	//res = pthread_create(&th, attr, func, arg);
+
 	TaskHandle_t xHandle;
-	BaseType_t result = xTaskCreate(func, NULL, STACK_SIZE, arg, 1 | portPRIVILEGE_BIT, &xHandle);
+	BaseType_t result = xTaskCreatePinnedToCore(func, "dbg_task", STACK_SIZE, arg, 1, &xHandle, 0);
 	if (result != pdPASS)
 	{
 		perror("t_create : Thread creation failed");
@@ -110,6 +141,7 @@ int __t_create(pvoid (*func)(void *), void *arg, int isDetach)
 
 	__threads[__countTh].handle = xHandle;
 	__threads[__countTh].isDetach = isDetach;
+	__threads[__countTh].parent = isDetach ? NULL : currentThread;
 
 	res = pthread_cond_init(&(__threads[__countTh].cond), NULL);
 	if (res != 0)
@@ -134,6 +166,10 @@ int __t_create(pvoid (*func)(void *), void *arg, int isDetach)
 		perror("__t_create : pthread_rwlock_unlock of __lock_t_create failed");
 		exit(EXIT_FAILURE);
 	}
+
+	sem_wait(&utilsem);
+	printf("Thread created\n");
+	sem_post(&utilsem);
 	return retVal;
 }
 
@@ -168,8 +204,49 @@ void t_exit()
 	vTaskDelete(NULL);
 }
 
+void t_notify_finished(void){
+	sem_wait(&utilsem);
+	printf("Trying to notify...\n");
+	sem_post(&utilsem);
+
+	int current_th_num = t_getThNum();
+
+	if(pthread_rwlock_rdlock(&__lock_t_create)){
+		perror("t_notify_finished : pthread_rwlock_rdlock failed");
+		exit(EXIT_FAILURE);
+	}
+
+	if(__threads[0].handle == xTaskGetCurrentTaskHandle()){
+		printf("Nothing to notify. This is the main thread\n");
+		return;
+	}
+
+	struct __threadInfo* parent = __threads[current_th_num].parent;
+
+	if(!parent){
+		if(pthread_rwlock_unlock(&__lock_t_create)){
+			perror("t_notify_finished : pthread_rwlock_unlock 1 failed");
+			exit(EXIT_FAILURE);
+		}
+		printf("no parent - nothing to notify\n");
+		return;
+	}
+
+	if(pthread_rwlock_unlock(&__lock_t_create)){
+		perror("t_notify_finished : pthread_rwlock_unlock 2 failed");
+		exit(EXIT_FAILURE);
+	}
+
+	// set to parent's notification value bit - id of current thread
+	xTaskNotify(parent->handle, 1 << current_th_num, eSetBits);
+}
+
 void t_join(int numTh)
 {
+	sem_wait(&utilsem);
+	printf("Joining thread: %d\n", numTh);
+	sem_post(&utilsem);
+
 	int res = pthread_rwlock_rdlock(&__lock_t_create);
 	if (res != 0)
 	{
@@ -181,8 +258,6 @@ void t_join(int numTh)
 	{
 		if (!__threads[numTh].isDetach)
 		{
-			TaskHandle_t xHandle = __threads[numTh].handle;
-
 			res = pthread_rwlock_unlock(&__lock_t_create);
 			if (res != 0)
 			{
@@ -190,12 +265,16 @@ void t_join(int numTh)
 				exit(EXIT_FAILURE);
 			}
 
-			res = pthread_join(th, NULL);
-			if (res != 0)
-			{
-				perror("t_join : Thread join failed");
-				exit(EXIT_FAILURE);
-			}
+			sem_wait(&utilsem);
+			printf("Trying to wait notification...\n");
+			sem_post(&utilsem);
+
+			uint32_t notify_value;
+			xTaskNotifyWait(0, ULONG_MAX, &notify_value, pdMS_TO_TICKS(100));
+
+			sem_wait(&utilsem);
+			printf("Notification handled\n");
+			sem_post(&utilsem);
 		}
 		else
 		{
@@ -208,11 +287,15 @@ void t_join(int numTh)
 		perror("t_join : Thread join failed - number of thread is out of range");
 		exit(EXIT_FAILURE);
 	}
+
+	sem_wait(&utilsem);
+	printf("thread joined!\n");
+	sem_post(&utilsem);
 }
 
 int t_getThNum()
 {
-	pthread_t th;
+	TaskHandle_t current_handle = xTaskGetCurrentTaskHandle();
 	int index, i;
 	int res = pthread_rwlock_rdlock(&__lock_t_create);
 	if (res != 0)
@@ -221,13 +304,13 @@ int t_getThNum()
 		exit(EXIT_FAILURE);
 	}
 
-	th = pthread_self();
 	index = -1;
 
 	for (i = 0; i < __countTh; i++)
 	{
-		if (pthread_equal(th, __threads[i].th))
-		{   index = i;
+		if (current_handle == __threads[i].handle)
+		{
+			index = i;
 			break;
 		}
 	}
@@ -249,8 +332,9 @@ int t_getThNum()
 
 void t_sleep(int miliseconds)
 {
-	//Sleep(seconds * 1000);
-	usleep(miliseconds * 1000);
+	//sleep(seconds * 1000);
+	//usleep(miliseconds * 1000);
+	vTaskDelay(miliseconds / portTICK_PERIOD_MS);
 }
 
 int t_sem_create(int level)
@@ -452,6 +536,9 @@ struct msg_info t_msg_receive()
 
 void t_destroy()
 {
+	sem_wait(&utilsem);
+	printf("executing t_destroy...\n");
+	sem_post(&utilsem);
 	int res, i;
 
 	for (i = 0; i < __countTh; i++)
@@ -492,4 +579,10 @@ void t_destroy()
 		perror("t_destroy : pthread_rwlock_destroy of __lock_t_sem_create failed");
 		exit(EXIT_FAILURE);
 	}
+
+	sem_wait(&utilsem);
+	printf("t_destroy done\n");
+	sem_post(&utilsem);
+
+	//sem_destroy(&utilsem);
 }

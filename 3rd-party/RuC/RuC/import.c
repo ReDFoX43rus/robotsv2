@@ -16,13 +16,6 @@
 
 #include "th_static.h"
 
-/**
-	0 - no debug
-	1 - timing debug
-	2 - timing & printf debug */
-#define DEBUG_VERSION 1
-
-
 // Я исхожу из того, что нумерация нитей процедурой t_create начинается с 1 и идет последовательно
 // в соответствии с порядком вызовов этой процудуры, главная программа имеет номер 0. Если стандарт POSIX
 // этого не обеспечивает, это должен сделать Саша Головань.
@@ -87,17 +80,14 @@ extern void servo_power(int, int);
 extern int handle_sensor(int, const int *);
 extern void set_voltage(int, int);
 
-#if DEBUG_VERSION > 0
 static inline uint32_t timestamp(){
     uint32_t ccount;
     asm volatile ("rsr %0, ccount" : "=r"(ccount));
     return ccount / 16;
 }
-#endif
 
 void runtimeerr(int e, int i, int r)
 {
-#if DEBUG_VERSION == 2
 	switch (e)
 	{
 		case index_out_of_range:
@@ -169,7 +159,6 @@ void runtimeerr(int e, int i, int r)
 		default:
 			;
 	}
-#endif
 	exit(3);
 }
 
@@ -370,7 +359,7 @@ void auxget(int beg, int t)
 		printf(" значения типа ФУНКЦИЯ и указателей вводить нельзя\n");
 }
 
-void* interpreter(void*);
+void interpreter(void*);
 
 int check_zero_int(int r)
 {
@@ -519,14 +508,10 @@ void interpreter(void* pcPnt)
 				break;
 
 			case GETDIGSENSORC:
-				array_ptr = mem[x--];
+				pin = mem[x--];
 				sensortype = -mem[x]; // 0 indicate to handle_sensor that it's digital sensor
 
-				array_size = mem[array_ptr - 1];
-				if(array_size >= max_array_size)
-					runtimeerr(robotsv2_too_long_array, 0, 0);
-
-				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
+				mem[x] = handle_sensor(sensortype, &pin);
 				if(mem[x] == -1)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
 				break;
@@ -1621,69 +1606,20 @@ void ruc_import(const char *filename)
 	maxdisplg = ruc_read_int(input, 1);
 	wasmain = ruc_read_int(input, 1);
 
-	#if DEBUG_VERSION == 2
-	printf("PC: %d funcnum: %d id: %d rp: %d md: %d maxdisplg: %d wasmain: %d\n", pc, funcnum, id, rp, md, maxdisplg, wasmain);
-	#endif
-
 	for (i=0; i<pc; i++)
-	{
 		mem[i] = ruc_read_int(input, 0);
-		#if DEBUG_VERSION == 2
-		printf("%d ", mem[i]);
-		#endif
-	}
-
-	#if DEBUG_VERSION == 2
-	printf("\n");
-	#endif
 
 	for (i=0; i<funcnum; i++)
-	{
 		functions[i] = ruc_read_int(input, 0);
-		#if DEBUG_VERSION == 2
-		printf("%d ", functions[i]);
-		#endif
-	}
-
-	#if DEBUG_VERSION == 2
-	printf("\n");
-	#endif
 
 	for (i=0; i<id; i++)
-	{
 		identab[i] = ruc_read_int(input, 0);
-		#if DEBUG_VERSION == 2
-		printf("%d ", identab[i]);
-		#endif
-	}
-
-	#if DEBUG_VERSION == 2
-	printf("\n");
-	#endif
 
 	for (i=0; i<rp; i++)
-	{
 		reprtab[i] = ruc_read_int(input, 0);
-		#if DEBUG_VERSION == 2
-		printf("%d ", reprtab[i]);
-		#endif
-	}
-
-	#if DEBUG_VERSION == 2
-	printf("\n");
-	#endif
 
 	for (i=0; i<md; i++)
-	{
 		modetab[i] = ruc_read_int(input, 0);
-		#if DEBUG_VERSION == 2
-		printf("%d ", modetab[i]);
-		#endif
-	}
-
-	#if DEBUG_VERSION == 2
-	printf("\n");
-	#endif
 
 	fclose(input);
 
@@ -1702,18 +1638,14 @@ void ruc_import(const char *filename)
 	sem_init(&sempr, 1, 0);
 	sempr_inited = 1;
 
-	//#if DEBUG_VERSION > 0
 	uint32_t stamp1 = timestamp();
-	//#endif
 
 	t_init();
 	interpreter(&pc);                      // номер нити главной программы 0
 	t_destroy();
 
-	//#if DEBUG_VERSION > 0
 	uint32_t stamp2 = timestamp();
-	printf("RuC execution time: %u", stamp2-stamp1);
-	//#endif
+	printf("RuC execution time: %u\n", stamp2-stamp1);
 }
 
 int szof(int type)
