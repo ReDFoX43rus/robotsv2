@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <semaphore.h>
 
-#include "th_static.h"
+#include "threadsv2.h"
 
 // Я исхожу из того, что нумерация нитей процедурой t_create начинается с 1 и идет последовательно
 // в соответствии с порядком вызовов этой процудуры, главная программа имеет номер 0. Если стандарт POSIX
@@ -79,6 +79,9 @@ static int pin = 0;
 extern void servo_power(int, int);
 extern int handle_sensor(int, const int *);
 extern void set_voltage(int, int);
+
+static int threads_inited = 0;
+void handle_end_of_thread(void);
 
 static inline uint32_t timestamp(){
     uint32_t ccount;
@@ -425,6 +428,9 @@ void interpreter(void* pcPnt)
 			case CREATEDIRECTC:
 				i = pc;
 				mem[++x] = t_create_inner(interpreter, (void*)&i);
+				if(mem[x] > 0){
+					threads_inited++;
+				}
 				break;
 
 			case CREATEC:
@@ -434,19 +440,25 @@ void interpreter(void* pcPnt)
 				entry = functions[i > 0 ? i : mem[l-i]];
 				i = entry + 3;                           // новый pc
 				mem[x] = t_create_inner(interpreter, (void*)&i);
+				if(mem[x] > 0){
+					threads_inited++;
+				}
 			}
 				break;
 
 			case JOINC:
-				t_join(mem[x--]);
+				//t_join(mem[x--]);
+				x--;
 				break;
 
 			case SLEEPC:
-				t_sleep(mem[x--]);
+				sleep(mem[x--]);
 				break;
 
 			case EXITDIRECTC:
 			case EXITC:
+				// since t_eixt terminates current thread, we have to care about t_destroy here
+				handle_end_of_thread();
 				t_exit();
 				break;
 
@@ -463,26 +475,26 @@ void interpreter(void* pcPnt)
 				break;
 
 			case INITC:
-				t_init();
+				//t_init();
 				break;
 
 			case DESTROYC:
-				t_destroy();
+				//t_destroy();
 				break;
 
 			case MSGRECEIVEC:
 			{
-				struct msg_info m = t_msg_receive();
-				mem[++x] = m.numTh;
+				thmsg_t m = t_msg_receive();
+				mem[++x] = m.thread_n;
 				mem[++x] = m.data;
 			}
 				break;
 
 			case MSGSENDC:
 			{
-				struct msg_info m;
+				thmsg_t m;
 				m.data = mem[x--];
-				m.numTh = mem[x--];
+				m.thread_n = mem[x--];
 				t_msg_send(m);
 			}
 				break;
@@ -1565,6 +1577,8 @@ void interpreter(void* pcPnt)
 				runtimeerr(wrong_kop, mem[pc-1], numTh);
 		}
 	}
+
+	handle_end_of_thread();
 }
 
 int ruc_read_int(FILE* file, int stopn){
@@ -1638,18 +1652,26 @@ void ruc_import(const char *filename)
 	sem_init(&sempr, 1, 0);
 	sempr_inited = 1;
 
-	uint32_t stamp1 = timestamp();
+	threads_inited = 1;
+	int init_res = t_init();
+	if(init_res != 0){
+		printf("init res: %d\n", init_res);
+		return;
+	}
 
-	t_init();
 	interpreter(&pc);                      // номер нити главной программы 0
-	t_destroy();
-
-	uint32_t stamp2 = timestamp();
-	printf("RuC execution time: %u\n", stamp2-stamp1);
 }
 
 int szof(int type)
 {
 	return type == LFLOAT ? 2 :
 	(type > 0 && modetab[type] == MSTRUCT) ? modetab[type + 1] : 1;
+}
+
+void handle_end_of_thread(void){
+	if(--threads_inited == 0){
+		printf("t_destroy is about to be called...\n");
+		t_destroy();
+		return;
+	}
 }
