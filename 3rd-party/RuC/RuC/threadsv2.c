@@ -103,13 +103,17 @@ int t_getThNum(void){
 	return retval;
 }
 
-int t_exit(void){
+int t_prepare_exit(void){
 	int num = t_getThNum();
 
 	TAKE_OR_DIE();
 	threads[num].status = OBJ_FREE;
 	GIVE_OR_DIE();
 
+	return 0;
+}
+
+int t_exit(void){
 	vTaskDelete(NULL);
 	return 0;
 }
