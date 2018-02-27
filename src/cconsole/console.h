@@ -25,4 +25,6 @@ private:
 	size_t m_CmdsExist;
 };
 
+extern CConsole console;
+
 #endif /* end of include guard: CONSOLE_CONSOLE_H */

@@ -4,7 +4,7 @@
 
 extern "C" void initialize_filesystem(void);
 
-static CConsole console = CConsole();
+//static CConsole console = CConsole();
 extern "C" void app_main()
 {
 	initialize_filesystem();

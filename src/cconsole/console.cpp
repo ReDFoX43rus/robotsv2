@@ -5,6 +5,8 @@
 
 #include "util/util.h"
 
+CConsole console;
+
 bool CConsole::HandleCmd(char *cmdstr){
 	splited_string_t splited = string_split(cmdstr);
 
