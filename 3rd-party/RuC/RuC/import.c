@@ -82,6 +82,7 @@ extern void set_voltage(int, int);
 
 static int threads_inited = 0;
 void handle_end_of_thread(void);
+static TaskHandle_t main_task;
 
 static inline uint32_t timestamp(){
     uint32_t ccount;
@@ -162,7 +163,9 @@ void runtimeerr(int e, int i, int r)
 		default:
 			;
 	}
-	exit(3);
+	//exit(3);
+	if(xTaskGetCurrentTaskHandle() != main_task)
+		vTaskDelete(NULL);
 }
 
 void printf_char(int wchar)
@@ -1651,6 +1654,8 @@ void ruc_import(const char *filename)
 	}
 	sem_init(&sempr, 1, 0);
 	sempr_inited = 1;
+
+	main_task = xTaskGetCurrentTaskHandle();
 
 	threads_inited = 1;
 	int init_res = t_init();
