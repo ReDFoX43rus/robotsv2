@@ -1,10 +1,11 @@
 const net = require('net');
 fs = require('fs')
 
-var content = fs.readFileSync("build/esp32_robots.bin")
+var content = fs.readFileSync("scripts/debug.sh")
 
-const client = net.createConnection(3000,"192.168.1.1", () => {
-	client.write(content)
+const client = net.createConnection(80,"192.168.0.6", () => {
+	client.write("filereceive /fat/debug.sh " + content.length + "\n");
+	client.write(content);
 	client.end();
 });
 client.on('data', (data) => {

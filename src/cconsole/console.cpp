@@ -5,6 +5,8 @@
 
 #include "util/util.h"
 
+#include "uart.h"
+
 CConsole console;
 
 bool CConsole::HandleCmd(char *cmdstr){

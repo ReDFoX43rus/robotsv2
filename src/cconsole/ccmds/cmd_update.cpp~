@@ -1,9 +1,0 @@
-#include "uart.h"
-#include "update/wifi_update.h"
-#include "cconsole/console.h"
-
-extern void wifi_update();
-
-void CmdUpdateHandler(int argc, char **argv){
-	wifi_update();
-}
