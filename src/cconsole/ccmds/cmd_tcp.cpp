@@ -5,7 +5,10 @@ void CmdTcpHandler(int argc, char *argv[]){
 	CTcp *tcp = new CTcp(80);
 	tcp->Init();
 
-	tcp->AcceptAndRecv();
+	tcp->SetupConsole();
+	
+	while(1)
+		tcp->AcceptAndRecv();
 
 	delete tcp;
 }

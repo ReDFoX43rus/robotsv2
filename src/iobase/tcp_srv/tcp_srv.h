@@ -17,7 +17,9 @@ public:
 
 	int Init();
 	int AcceptAndRecv();
-	void Flush() {m_CurrentBuffSize = 0;}
+	void Flush() {m_QueueBack = 0; m_QueueFront = 0;}
+	int SetupConsole();
+	void DestroyConsole();
 
 	/* IOBase functions */
 	uint32_t GetChar();
@@ -29,8 +31,14 @@ private:
 	int m_ConnectSocket;
 
 	SemaphoreHandle_t m_BuffSem;
-	char m_IOBuffer[TCPIO_MAX_BUFF_SIZE];
-	uint32_t m_CurrentBuffSize;
+	char m_IOQueue[TCPIO_MAX_BUFF_SIZE];
+	uint32_t m_QueueFront;
+	uint32_t m_QueueBack;
+	/* Must be called only when semaphore is taken */
+	void BalanceQueue();
+
+	TaskHandle_t m_ConsoleTask;
+	static void AttachToConsole(void *arg);
 
 	static int show_socket_error_reason(const char *str, int socket);
 	static int get_socket_error_code(int socket);

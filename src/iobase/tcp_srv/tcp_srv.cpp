@@ -4,13 +4,16 @@
 #include "esp_log.h"
 #include "string.h"
 #include "uart.h"
+#include "cconsole/console.h"
 
 CTcp::CTcp(uint16_t port){
 	m_Port = port;
 	m_ServerSocket = 0;
 	m_ConnectSocket = 0;
-	m_CurrentBuffSize = 0;
+	m_QueueFront = 0;
+	m_QueueBack = 0;
 	m_BuffSem = xSemaphoreCreateMutex();
+	m_ConsoleTask = 0;
 }
 
 CTcp::~CTcp(){
@@ -77,9 +80,14 @@ int CTcp::AcceptAndRecv(){
 	while((len = recv(m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
 
 		if(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) == pdTRUE){
-			to_write = m_CurrentBuffSize + len <= TCPIO_RECV_BUFF_SIZE ? len : TCPIO_RECV_BUFF_SIZE - m_CurrentBuffSize;
-			memcpy(m_IOBuffer + m_CurrentBuffSize, buff, to_write);
-			m_CurrentBuffSize += to_write;
+			if(m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE)
+				BalanceQueue();
+
+			to_write = m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE ? len : TCPIO_MAX_BUFF_SIZE - m_QueueFront;
+			memcpy(m_IOQueue + m_QueueFront, buff, to_write);
+			m_QueueFront += to_write;
+
+			uart << "current buff size: " << m_QueueFront << endl;
 
 			uart << "recv: ";
 			uart.Write(buff, to_write);
@@ -88,7 +96,25 @@ int CTcp::AcceptAndRecv(){
 		xSemaphoreGive(m_BuffSem);
 	}
 
+	close(m_ConnectSocket);
+
 	return len;
+}
+
+void CTcp::AttachToConsole(void *arg){
+	while(1)
+		console.WaitForCmd(*(CTcp*)arg);
+}
+
+int CTcp::SetupConsole(){
+	return xTaskCreate(AttachToConsole, "tcp_console", 4096, this, 4, &m_ConsoleTask) != pdTRUE ? -1 : 0;
+}
+
+void CTcp::DestroyConsole(){
+	if(m_ConsoleTask){
+		vTaskDelete(m_ConsoleTask);
+		m_ConsoleTask = 0;
+	}
 }
 
 uint32_t CTcp::GetChar(){
@@ -98,13 +124,16 @@ _take_sem:
 	while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
 		;
 
-	if(!m_CurrentBuffSize){
+	if(m_QueueBack == m_QueueFront){
 		xSemaphoreGive(m_BuffSem);
 		vTaskDelay(pdMS_TO_TICKS(350));
 		goto _take_sem;
 	}
 
-	ret = m_IOBuffer[m_CurrentBuffSize--];
+	ret = m_IOQueue[m_QueueBack++];
+
+	// uart << "Returning char: " << ret << " queue back: " << m_QueueBack << " queue front: " << m_QueueFront << endl;
+
 	xSemaphoreGive(m_BuffSem);
 
 	return ret;
@@ -117,6 +146,11 @@ size_t CTcp::Write(const char *data, size_t size){
 	int res = send(m_ConnectSocket, data, size, 0);
 
 	return res >= 0 ? res : 0;
+}
+
+void CTcp::BalanceQueue(){
+	for(int i = m_QueueBack; i <= m_QueueFront; i++)
+		m_IOQueue[i - m_QueueBack] = m_IOQueue[i];
 }
 
 int CTcp::get_socket_error_code(int socket)
