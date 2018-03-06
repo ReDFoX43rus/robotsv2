@@ -42,6 +42,7 @@ int t_init(void){
 	TAKE_OR_DIE();
 	threads[0].handle = xTaskGetCurrentTaskHandle();
 	threads[0].status = OBJ_INITED;
+	threads[0].msg_sem = xSemaphoreCreateMutex();
 	GIVE_OR_DIE();
 
 	sem_sem = xSemaphoreCreateMutex();
@@ -51,6 +52,14 @@ int t_init(void){
 	return 0;
 }
 int t_destroy(void){
+	TAKE_OR_DIE();
+	for(int i = 0; i < MAX_THREADS; i++){
+		if(threads[i].status == OBJ_INITED){
+			vSemaphoreDelete(threads[i].msg_sem);
+		}
+	}
+	GIVE_OR_DIE();
+
 	STAKE_OR_DIE();
 	for(int i = 0; i < MAX_SEMS; i++){
 		if(sems[i].status == OBJ_INITED){
@@ -82,6 +91,7 @@ int t_create_inner(TaskFunction_t func, void* arg){
 	}
 
 	threads[new_thread_id].status = OBJ_INITED;
+	threads[new_thread_id].msg_sem = xSemaphoreCreateMutex();
 
 	GIVE_OR_DIE();
 	return new_thread_id;
@@ -157,9 +167,77 @@ int t_sem_post(int numSem){
 }
 
 int t_msg_send(thmsg_t msg){
+	int current_thread_n = t_getThNum();
+	if(current_thread_n < 0)
+		return -6;
+
+	TAKE_OR_DIE();
+	int n = msg.thread_n;
+	if(threads[n].status != OBJ_INITED){
+		GIVE_OR_DIE();
+		return -2;
+	}
+	thread_t *to = &threads[n];
+	GIVE_OR_DIE();
+
+	if(xSemaphoreTake(to->msg_sem, DEFAULT_WAIT_TICKS) != pdTRUE)
+		return -3;
+
+	if(to->msgs_n >= MAX_SEMS){
+		xSemaphoreGive(to->msg_sem);
+		return -5;
+	}
+
+	to->msgs[to->msgs_n] = msg;
+	to->msgs[to->msgs_n++].thread_n = current_thread_n;
+
+	/* eIncrement - increments task's notification value */
+	xTaskNotify(to->handle, 0, eIncrement);
+
+	if(xSemaphoreGive(to->msg_sem) != pdTRUE)
+		return -4;
+
 	return 0;
 }
 thmsg_t t_msg_receive(void){
-	thmsg_t test;
-	return test;
+	thmsg_t retval = {
+		.thread_n = 0,
+		.data = 0
+	};
+
+	/* pdFALSE - decrement task's notification value */
+	uint32_t was_msgs = ulTaskNotifyTake(pdFALSE, DEFAULT_WAIT_TICKS);
+	if(!was_msgs){
+		retval.thread_n = -3;
+		return retval;
+	}
+
+	int current_thread_n = t_getThNum();
+	if(current_thread_n < 0){
+		retval.thread_n = -2;
+		return retval;
+	}
+
+	/*TAKE_OR_DIE();*/
+	if(xSemaphoreTake(th_sem, DEFAULT_WAIT_TICKS) != pdTRUE){
+		retval.thread_n = -1;
+		return retval;
+	}
+	thread_t *current = &threads[current_thread_n];
+	xSemaphoreGive(th_sem);
+
+	if(xSemaphoreTake(current->msg_sem, DEFAULT_WAIT_TICKS) != pdTRUE){
+		retval.thread_n = -4;
+		return retval;
+	}
+
+	if(current->msgs_n > 0){
+		retval = current->msgs[current->msgs_n];
+
+		current->msgs_n--;
+	} else retval.thread_n = -5;
+
+	xSemaphoreGive(current->msg_sem);
+
+	return retval;
 }

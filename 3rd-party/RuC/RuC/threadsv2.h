@@ -32,6 +32,8 @@ typedef struct {
 
 	thmsg_t msgs[MAX_MESSAGES_PER_THREAD];
 	int msgs_n;
+
+	SemaphoreHandle_t msg_sem;
 } thread_t;
 
 typedef struct {
