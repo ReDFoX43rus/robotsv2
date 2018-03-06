@@ -6,6 +6,10 @@
 #define STRING_BUFF_SIZE 512
 #define INT_BUFF_SIZE 16
 
+CIOBase::~CIOBase(){}
+uint32_t CIOBase::GetChar(){return 0;}
+uint32_t CIOBase::Write(const char *data, uint32_t size) {return 0;}
+
 bool CIOBase::GetString(char *string, size_t size){
 	bool retVal = true;
 	size_t from = 0;

@@ -7,6 +7,8 @@
 /* @brief base class for io communications */
 class CIOBase{
 public:
+	virtual ~CIOBase();
+
 	/* Returns char, blocks input */
 	virtual uint32_t GetChar();
 

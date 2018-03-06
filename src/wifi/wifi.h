@@ -23,6 +23,7 @@ private:
 	bool m_Inited;
 	wifi_ap_record_t *m_ScanRecords;
 	uint16_t m_CurrentScanRecords;
+	wifi_config_t wifi_config;
 
 	enum{
 		WIFI_CONNECTED_BIT=BIT0
