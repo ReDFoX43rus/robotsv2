@@ -12,13 +12,25 @@ esp_err_t CWifi::event_handler(void *ctx, system_event_t *event)
 {
 	switch (event->event_id) {
 		case SYSTEM_EVENT_STA_START:
-			esp_wifi_connect();
+			//esp_wifi_connect();
+			uart << "STA start" << endl;
 			break;
 		case SYSTEM_EVENT_STA_DISCONNECTED:
+			uart << "STA disconnected" << endl;
 			esp_wifi_connect();
 			xEventGroupClearBits(CWifi::m_EventGroup, WIFI_CONNECTED_BIT);
 			break;
 		case SYSTEM_EVENT_STA_CONNECTED:
+			uart << "STA connected" << endl;
+			break;
+		case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
+			uart << "STA wps ok" << endl;
+			break;
+		case SYSTEM_EVENT_STA_WPS_ER_FAILED:
+			uart << "STA wps failed" << endl;
+			break;
+		case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
+			uart << "STA wps timeouted" << endl;
 			break;
 		case SYSTEM_EVENT_STA_GOT_IP:
 			printf("wifi: got ip:%s\n",
@@ -134,18 +146,15 @@ void CWifi::ListScanRecords(){
 int CWifi::Connect(char *ssid, char *pwd){
 	wifi_config_t wifi_config;
 
-	if(esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_config) != ESP_OK)
-		return -1;
-
 	strcpy((char*)wifi_config.sta.ssid, ssid);
 	strcpy((char*)wifi_config.sta.password, pwd);
 
-	esp_wifi_stop();
+	esp_wifi_disconnect();
 
 	if(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) != ESP_OK)
 		return -2;
 
-	if(esp_wifi_start() != ESP_OK)
+	if(esp_wifi_connect() != ESP_OK)
 		return -3;
 
 	return 0;
