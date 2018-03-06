@@ -1,5 +1,5 @@
-#include "../../sensors/crash.h"
-#include "../../iobase/uart/uart.h"
+#include "sensors/crash.h"
+#include "iobase/uart/uart.h"
 
 #include "driver/gpio.h"
 
@@ -10,7 +10,7 @@ void CrashCallback(void*){
 	sensor.Disable();
 }
 
-void CmdCrashsensorHandler(int argc, char **argv){
+void CmdCrashsensorHandler(CIOBase &io, int argc, char **argv){
 	sensor.Setup().SetCallbackFunction(&CrashCallback);
-	uart << "Setup ok ;)" << endl;
+	io << "Setup ok ;)" << endl;
 }

@@ -1,12 +1,12 @@
-#include "../../iobase/uart/uart.h"
-#include "../../iobase/fileio/fileio.h"
-#include "../../util/util.h"
+#include "iobase/iobase.h"
+#include "iobase/fileio/fileio.h"
+#include "util/util.h"
 
 #define RECEIVE_BUFF_SIZE 1024
 
-void CmdFilereceiveHandler(int argc, char **argv){
+void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 	if(argc < 3){
-		uart << "Usage: filereceive filename size" << endl;
+		io << "Usage: filereceive filename size" << endl;
 		return;
 	}
 
@@ -22,7 +22,7 @@ void CmdFilereceiveHandler(int argc, char **argv){
 
 	CFile file = CFile(filename, FM_WRITE);
 	if(!file.IsOpened()){
-		uart << "Error: cannot open file" << endl;
+		io << "Error: cannot open file" << endl;
 		return;
 	}
 
@@ -32,29 +32,28 @@ void CmdFilereceiveHandler(int argc, char **argv){
 		isSwap = true;
 	else buffer = (char*)malloc(RECEIVE_BUFF_SIZE);
 
-	//uart << "Using swap: " << (isSwap ? "yes" : "no") << endl;
-	uart << (int)isSwap << endl;
+	io << (int)isSwap << endl;
 
 	size_t receivedBytes = 0;
-	int uartBufDSize, currentDiff;
+	int ioBufDSize, currentDiff;
 	while(receivedBytes < fileSize){
-		uartBufDSize = uart.GetBufferedDataLength();
-		if(uartBufDSize < 0){
-			uart << "Error receiving file :C" << endl;
+		ioBufDSize = io.GetBufferedDataLength();
+		if(ioBufDSize < 0){
+			io << "Error receiving file :C" << endl;
 			file.Close();
 			return;
 		}
 
 		if(isSwap){
 			// this variable used to control overflow
-			currentDiff = receivedBytes + uartBufDSize;
-			receivedBytes += uart.GetBytes(buffer + receivedBytes, currentDiff < fileSize ? uartBufDSize : fileSize - receivedBytes);
+			currentDiff = receivedBytes + ioBufDSize;
+			receivedBytes += io.GetBytes(buffer + receivedBytes, currentDiff < fileSize ? ioBufDSize : fileSize - receivedBytes);
 		} else {
 			currentDiff = fileSize - receivedBytes > RECEIVE_BUFF_SIZE ? RECEIVE_BUFF_SIZE : fileSize - receivedBytes;
-			while(uartBufDSize < currentDiff)
-				uartBufDSize = uart.GetBufferedDataLength();
+			while(ioBufDSize < currentDiff)
+				ioBufDSize = io.GetBufferedDataLength();
 
-			uart.GetBytes(buffer, currentDiff);
+			io.GetBytes(buffer, currentDiff);
 			file.Write(buffer, currentDiff);
 			receivedBytes += currentDiff;
 		}
@@ -67,5 +66,5 @@ void CmdFilereceiveHandler(int argc, char **argv){
 	file.Close();
 
 	free(buffer);
-	uart << "Done!" << endl;
+	io << "Done!" << endl;
 }

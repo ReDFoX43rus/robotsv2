@@ -1,6 +1,7 @@
-#include "uart.h"
+#include "iobase/iobase.h"
 #include "pthread.h"
 #include "semaphore.h"
+#include "uart.h"
 
 static void* Thread(void *data){
 	static int threadInc = 0;
@@ -14,9 +15,9 @@ static void* Thread(void *data){
 extern void pthread_test(void*);
 extern void rwlock_test(void*);
 
-void CmdThreadtestHandler(int argc, char **argv){
+void CmdThreadtestHandler(CIOBase &io, int argc, char **argv){
 	if(argc < 2){
-		uart << "Usage: Threadtest num_threads" << endl;
+		io << "Usage: Threadtest num_threads" << endl;
 		return;
 	}
 
@@ -34,7 +35,7 @@ void CmdThreadtestHandler(int argc, char **argv){
 		pthread_join(threads[i], NULL);
 
 		sem_wait(&sem);
-		uart << "Thread " << i << " joined" << endl;
+		io << "Thread " << i << " joined" << endl;
 		sem_post(&sem);
 	}
 

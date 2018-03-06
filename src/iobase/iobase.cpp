@@ -163,3 +163,6 @@ CIOBase &CIOBase::operator>>(uint32_t &data){
 	free(str);
 	return *this;
 }
+
+int CIOBase::GetBufferedDataLength() {return 0;}
+int CIOBase::GetBytes(char *data, size_t size) { return 0;}

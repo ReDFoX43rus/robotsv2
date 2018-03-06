@@ -26,6 +26,9 @@ public:
 	/* Returns number of written bytes */
 	virtual size_t Write(const char *data, size_t size);
 
+	virtual int GetBufferedDataLength();
+	virtual int GetBytes(char *data, size_t size);
+
 	/* Read and write overloads */
 	CIOBase &operator<<(char c);
 	char operator>>(char &c);

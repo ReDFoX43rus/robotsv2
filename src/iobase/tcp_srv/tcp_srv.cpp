@@ -148,6 +148,26 @@ size_t CTcp::Write(const char *data, size_t size){
 	return res >= 0 ? res : 0;
 }
 
+int CTcp::GetBufferedDataLength() {
+	return m_QueueFront - m_QueueBack;
+}
+int CTcp::GetBytes(char *data, size_t size){
+	int buffSize = m_QueueFront - m_QueueBack;
+
+	if(size > buffSize)
+		size = buffSize;
+
+	while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
+		;
+
+	memcpy(data, m_IOQueue + m_QueueBack, size);
+	m_QueueBack += size;
+
+	xSemaphoreGive(m_BuffSem);
+
+	return size;
+}
+
 void CTcp::BalanceQueue(){
 	for(int i = m_QueueBack; i <= m_QueueFront; i++)
 		m_IOQueue[i - m_QueueBack] = m_IOQueue[i];

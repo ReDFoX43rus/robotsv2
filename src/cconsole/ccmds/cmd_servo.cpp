@@ -1,4 +1,4 @@
-#include "uart.h"
+#include "iobase/iobase.h"
 #include "cconsole/console.h"
 
 #include "unistd.h"
@@ -6,7 +6,7 @@
 
 
 
-void CmdServoHandler(int argc, char **argv){
+void CmdServoHandler(CIOBase &io, int argc, char **argv){
 	CServo c = CServo(GPIO_NUM_16, GPIO_NUM_17, GPIO_NUM_18, GPIO_NUM_19, GPIO_NUM_32, GPIO_NUM_33);
 	if (atoi(argv[3])!=0){
 		c.Stop();

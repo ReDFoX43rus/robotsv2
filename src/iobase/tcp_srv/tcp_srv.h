@@ -24,6 +24,8 @@ public:
 	/* IOBase functions */
 	uint32_t GetChar();
 	size_t Write(const char *data, size_t size);
+	int GetBufferedDataLength();
+	int GetBytes(char *data, size_t size);
 
 private:
 	uint16_t m_Port;

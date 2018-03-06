@@ -1,13 +1,13 @@
-#include "../../iobase/uart/uart.h"
-#include "../../sensors/flame.h"
+#include "iobase/iobase.h"
+#include "sensors/flame.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 /* TODO: Check analog value */
-void CmdFlameHandler(int argc, char **argv){
+void CmdFlameHandler(CIOBase &io, int argc, char **argv){
 	if(argc < 3){
-		uart << "Usage: flame dig_pin an_pin" << endl;
+		io << "Usage: flame dig_pin an_pin" << endl;
 		return;
 	}
 
@@ -19,7 +19,7 @@ void CmdFlameHandler(int argc, char **argv){
 		int dig = flame.GetDigValue();
 		int an = flame.GetAnValue();
 
-		uart << "Digital value: " << dig << " Analog value: " << an << endl;
+		io << "Digital value: " << dig << " Analog value: " << an << endl;
 		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 }

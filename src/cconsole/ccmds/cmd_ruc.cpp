@@ -1,4 +1,4 @@
-#include "uart.h"
+#include "iobase/iobase.h"
 #include "pthread.h"
 #include "cpthread/dsem.h"
 
@@ -19,7 +19,7 @@ static void *thread(void *v) {
 	return NULL;
 }
 
-void CmdRucHandler(int argc, char **argv){
+void CmdRucHandler(CIOBase &io, int argc, char **argv){
 	/*pthread_mutex_init(&lock, NULL);
 	pthread_cond_init(&cv, NULL);
 
@@ -39,7 +39,7 @@ void CmdRucHandler(int argc, char **argv){
 	return;*/
 
 	if(argc < 2){
-		uart << "Usage: ruc filename" << endl;
+		io << "Usage: ruc filename" << endl;
 		return;
 	}
 

@@ -9,7 +9,7 @@
 
 CConsole console;
 
-bool CConsole::HandleCmd(char *cmdstr){
+bool CConsole::HandleCmd(CIOBase &io, char *cmdstr){
 	splited_string_t splited = string_split(cmdstr);
 
 	char **argv = splited.data;
@@ -20,7 +20,7 @@ bool CConsole::HandleCmd(char *cmdstr){
 	for(int i = 0; i < MAX_CMDS; i++){
 		const char *cmdName = m_Cmds[i].name;
 		if(!strcmp(cmdName, name)){
-			m_Cmds[i].Handle(argc, argv);
+			m_Cmds[i].Handle(io, argc, argv);
 
 			release_split(splited);
 			return true;
@@ -37,7 +37,7 @@ void CConsole::WaitForCmd(CIOBase &io){
 	char *str = io.GetString();
 	io << endl;
 
-	if(!HandleCmd(str))
+	if(!HandleCmd(io, str))
 		io << "Unknown cmd: " << str << endl;
 
 	free(str);

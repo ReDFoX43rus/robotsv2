@@ -7,7 +7,7 @@
 
 typedef struct cmd{
 	char name[64];
-	void (*Handle)(int argc, char **argv);
+	void (*Handle)(CIOBase &io, int argc, char **argv);
 } cmd_t;
 
 class CConsole{
@@ -15,8 +15,8 @@ public:
 	CConsole();
 	~CConsole(){};
 
-	bool RegisterCmd(CmdTypes type, void (*Handler)(int argc, char **argv));
-	bool HandleCmd(char *cmdstr);
+	bool RegisterCmd(CmdTypes type, void (*Handler)(CIOBase &io, int argc, char **argv));
+	bool HandleCmd(CIOBase &io, char *cmdstr);
 
 	void WaitForCmd(CIOBase &io);
 private:

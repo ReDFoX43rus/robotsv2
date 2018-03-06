@@ -26,6 +26,9 @@ public:
 	size_t Write(const char *data, size_t size);
 
 	size_t GetSize();
+
+	int GetBufferedDataLength();
+	int GetBytes(char *data, size_t size);
 private:
 	FILE* m_File;
 	FileMode m_Mode;

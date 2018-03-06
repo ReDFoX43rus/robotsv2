@@ -69,3 +69,6 @@ size_t CFile::GetSize(){
 	fseek(m_File, currentPos, SEEK_SET);
 	return size;
 }
+
+int CFile::GetBufferedDataLength() {return GetSize();};
+int CFile::GetBytes(char *data, size_t size) {return GetString(data, size);}
