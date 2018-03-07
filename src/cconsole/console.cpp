@@ -23,9 +23,10 @@ bool CConsole::HandleCmd(CIOBase &io, char *cmdstr){
 	for(int i = 0; i < MAX_CMDS; i++){
 		const char *cmdName = m_Cmds[i].name;
 
-		if(!auth->IsAuthed() && strcmp(cmdName, "auth")){
+		if(!auth->IsAuthed() && strcmp(name, "auth")){
 			io << "You are unauthed, auth first" << endl;
-			break;
+			release_split(splited);
+			return true;
 		}
 
 		if(!strcmp(cmdName, name)){

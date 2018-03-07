@@ -1,5 +1,6 @@
 #include "auth.h"
 #include "string.h"
+#include "uart.h"
 
 CAuth::CAuth(){
 	m_Authed = !IsPassFileExists();
@@ -13,9 +14,15 @@ int CAuth::TryAuth(const char* pwd){
 	if(!file.IsOpened())
 		return -1;
 
-	char *truePwd = (char*)malloc(AUTH_PWD_LENGTH);
+	char *truePwd = (char*)malloc(AUTH_PWD_LENGTH+1);
+
+	int size = file.GetSize() - strlen(endl);
+	uart << size << endl;
 
 	file.GetString(truePwd, AUTH_PWD_LENGTH);
+
+	truePwd[size] = '\0';
+	uart << "Pass1: " << truePwd << " Pass2: " << pwd << endl;
 
 	int res;
 	if(!strcmp(truePwd, pwd)){
