@@ -18,9 +18,10 @@ public:
 
 	int Init();
 	int AcceptAndHandle();
+	int DestroyClientHandler();
 	int DropClient();
 	void Flush() {m_QueueBack = 0; m_QueueFront = 0;}
-	
+
 	int SetupConsole();
 	void DestroyConsole();
 

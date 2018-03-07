@@ -114,12 +114,19 @@ int CTcp::AcceptAndHandle(){
 	return xTaskCreate(HandleClient, "tcp_client_handle", 4096, this, 4, &m_ClientHandleTask) != pdTRUE ? -2 : 0;
 }
 
-int CTcp::DropClient(){
+int CTcp::DestroyClientHandler(){
 	if(m_ClientHandleTask == 0)
 		return -1;
 
 	vTaskDelete(m_ClientHandleTask);
-	m_ClientHandleTask = 0;
+	DropClient();
+	return 0;
+}
+
+int CTcp::DropClient(){
+	if(m_ClientHandleTask == 0)
+		return -1;
+
 	close(m_ConnectSocket);
 	Flush();
 	return 0;

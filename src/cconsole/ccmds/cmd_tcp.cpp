@@ -36,5 +36,13 @@ void CmdTcpHandler(CIOBase &io, int argc, char *argv[]){
 
 		*tcp << "Bye, client on port " << port << endl;
 		io << "Drop client: " << tcp->DropClient() << endl;
+	} else if(mode == 2){
+		CTcp *tcp = factory->GetTcpByPort(port);
+		if(!tcp){
+			io << "Cannot get tcp by port" << endl;
+			return;
+		}
+
+		io << "Destroy client handler: " << tcp->DestroyClientHandler() << endl;
 	}
 }
