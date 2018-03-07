@@ -21,8 +21,9 @@ def sendFile(filename):
 	size = sfile.tell()
 	sfile.seek(0, os.SEEK_SET)
 
-	print "Filename: " + os.path.basename(filename) 
-	tty.write("filereceive " + "/fat/" + os.path.basename(filename) + " " + str(size) + "\n")
+	print "Filename: " + os.path.basename(filename)
+	#tty.write("filereceive " + "/fat/" + os.path.basename(filename) + " " + str(size) + "\n")
+	tty.write("update " + str(size) + "\n")
 
 	time.sleep(0.5)
 

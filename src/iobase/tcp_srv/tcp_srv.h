@@ -6,8 +6,9 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#define TCPIO_MAX_BUFF_SIZE 2048
-#define TCPIO_RECV_BUFF_SIZE 64
+#define TCPIO_MAX_BUFF_SIZE (4096*2)
+/* TCPIO_RECV_BUFF_SIZE should be like 1/8 of TCPIO_MAX_BUFF_SIZE */
+#define TCPIO_RECV_BUFF_SIZE 512
 #define TCPIO_SEM_WAIT_TIME pdMS_TO_TICKS(100)
 
 class CTcp : public CIOBase{

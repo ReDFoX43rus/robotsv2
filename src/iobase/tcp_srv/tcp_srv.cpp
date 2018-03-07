@@ -76,24 +76,35 @@ int CTcp::AcceptAndRecv(){
 
 	char buff[TCPIO_RECV_BUFF_SIZE];
 	int len, to_write;
+	int currentBuffSize = 0;
 
 	while((len = recv(m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
 
-		if(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) == pdTRUE){
-			if(m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE)
-				BalanceQueue();
+		while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
+			vTaskDelay(pdMS_TO_TICKS(50));
 
-			to_write = m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE ? len : TCPIO_MAX_BUFF_SIZE - m_QueueFront;
-			memcpy(m_IOQueue + m_QueueFront, buff, to_write);
-			m_QueueFront += to_write;
+		if(m_QueueFront + len > TCPIO_MAX_BUFF_SIZE)
+			BalanceQueue();
 
-			uart << "current buff size: " << m_QueueFront << endl;
+		to_write = m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE ? len : TCPIO_MAX_BUFF_SIZE - m_QueueFront;
+		memcpy(m_IOQueue + m_QueueFront, buff, to_write);
+		m_QueueFront += to_write;
 
-			uart << "recv: ";
-			uart.Write(buff, to_write);
-			uart << endl;
+		if(len - to_write != 0){
+			*this << "Lost " << len - to_write << " bytes" << endl;
 		}
+
+		currentBuffSize = m_QueueFront - m_QueueBack;
+
+		// uart << "Back: " << m_QueueBack << " Front: " << m_QueueFront << endl;
+
+		// uart << "recv: ";
+		// uart.Write(buff, to_write);
+		// uart << endl;
+
 		xSemaphoreGive(m_BuffSem);
+		if(currentBuffSize == TCPIO_MAX_BUFF_SIZE)
+			vTaskDelay(pdMS_TO_TICKS(350));
 	}
 
 	close(m_ConnectSocket);
@@ -126,13 +137,13 @@ _take_sem:
 
 	if(m_QueueBack == m_QueueFront){
 		xSemaphoreGive(m_BuffSem);
-		vTaskDelay(pdMS_TO_TICKS(350));
+		vTaskDelay(pdMS_TO_TICKS(50));
 		goto _take_sem;
 	}
 
 	ret = m_IOQueue[m_QueueBack++];
 
-	// uart << "Returning char: " << ret << " queue back: " << m_QueueBack << " queue front: " << m_QueueFront << endl;
+	// uart << "Returning char... Queue back: " << m_QueueBack << " queue front: " << m_QueueFront << endl;
 
 	xSemaphoreGive(m_BuffSem);
 
@@ -149,16 +160,29 @@ size_t CTcp::Write(const char *data, size_t size){
 }
 
 int CTcp::GetBufferedDataLength() {
-	return m_QueueFront - m_QueueBack;
+	while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
+		;
+
+	int len = m_QueueFront - m_QueueBack;
+
+	xSemaphoreGive(m_BuffSem);
+
+	return len;
 }
 int CTcp::GetBytes(char *data, size_t size){
+_getBytes_take_sem:
+	while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
+		;
+
 	int buffSize = m_QueueFront - m_QueueBack;
+	if(!buffSize){
+		xSemaphoreGive(m_BuffSem);
+		vTaskDelay(pdMS_TO_TICKS(50));
+		goto _getBytes_take_sem;
+	}
 
 	if(size > buffSize)
 		size = buffSize;
-
-	while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
-		;
 
 	memcpy(data, m_IOQueue + m_QueueBack, size);
 	m_QueueBack += size;
@@ -171,6 +195,9 @@ int CTcp::GetBytes(char *data, size_t size){
 void CTcp::BalanceQueue(){
 	for(int i = m_QueueBack; i <= m_QueueFront; i++)
 		m_IOQueue[i - m_QueueBack] = m_IOQueue[i];
+
+	m_QueueFront -= m_QueueBack;
+	m_QueueBack = 0;
 }
 
 int CTcp::get_socket_error_code(int socket)
