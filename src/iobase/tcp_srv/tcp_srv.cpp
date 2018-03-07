@@ -84,25 +84,35 @@ void CTcp::HandleClient(void *arg){
 
 		while((len = recv(tcp->m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
 
-			while(xSemaphoreTake(tcp->m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
-				vTaskDelay(pdMS_TO_TICKS(50));
+			/* prevent from losing data */
+			while(1){
 
-			if(tcp->m_QueueFront + len > TCPIO_MAX_BUFF_SIZE)
-				tcp->BalanceQueue();
+				while(xSemaphoreTake(tcp->m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
+					vTaskDelay(pdMS_TO_TICKS(50));
 
-			to_write = tcp->m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE ? len : TCPIO_MAX_BUFF_SIZE - tcp->m_QueueFront;
-			memcpy(tcp->m_IOQueue + tcp->m_QueueFront, buff, to_write);
-			tcp->m_QueueFront += to_write;
+				if(tcp->m_QueueFront + len > TCPIO_MAX_BUFF_SIZE)
+					tcp->BalanceQueue();
 
-			if(len - to_write != 0){
-				*tcp << "Lost " << len - to_write << " bytes" << endl;
+				to_write = tcp->m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE ? len : TCPIO_MAX_BUFF_SIZE - tcp->m_QueueFront;
+
+				/* prevent from loosing data */
+				if(len != to_write){
+					xSemaphoreGive(tcp->m_BuffSem);
+					vTaskDelay(pdMS_TO_TICKS(50));
+					continue;
+				}
+
+				memcpy(tcp->m_IOQueue + tcp->m_QueueFront, buff, to_write);
+				tcp->m_QueueFront += to_write;
+
+				currentBuffSize = tcp->m_QueueFront - tcp->m_QueueBack;
+
+				xSemaphoreGive(tcp->m_BuffSem);
+				if(currentBuffSize == TCPIO_MAX_BUFF_SIZE)
+					vTaskDelay(pdMS_TO_TICKS(350));
+
+				break;
 			}
-
-			currentBuffSize = tcp->m_QueueFront - tcp->m_QueueBack;
-
-			xSemaphoreGive(tcp->m_BuffSem);
-			if(currentBuffSize == TCPIO_MAX_BUFF_SIZE)
-				vTaskDelay(pdMS_TO_TICKS(350));
 		}
 	}
 }
@@ -160,7 +170,6 @@ _take_sem:
 
 	if(m_QueueBack == m_QueueFront){
 		xSemaphoreGive(m_BuffSem);
-		vTaskDelay(pdMS_TO_TICKS(50));
 		goto _take_sem;
 	}
 

@@ -4,6 +4,7 @@
 #include "stdlib.h"
 
 #include "util/util.h"
+#include "util/auth/auth.h"
 
 #include "uart.h"
 
@@ -17,8 +18,16 @@ bool CConsole::HandleCmd(CIOBase &io, char *cmdstr){
 
 	const char *name = argv[0]; // original cmd name
 
+	CAuth *auth = CAuth::Instance();
+
 	for(int i = 0; i < MAX_CMDS; i++){
 		const char *cmdName = m_Cmds[i].name;
+
+		if(!auth->IsAuthed() && strcmp(cmdName, "auth")){
+			io << "You are unauthed, auth first" << endl;
+			break;
+		}
+
 		if(!strcmp(cmdName, name)){
 			m_Cmds[i].Handle(io, argc, argv);
 
