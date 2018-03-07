@@ -1,14 +1,40 @@
 #include "iobase/iobase.h"
-#include "iobase/tcp_srv/tcp_srv.h"
+#include "iobase/tcp_srv/tcp_factory.h"
+
+static uint16_t port = 80;
 
 void CmdTcpHandler(CIOBase &io, int argc, char *argv[]){
-	CTcp *tcp = new CTcp(80);
-	tcp->Init();
+	if(argc < 2){
+		io << "Usage: " << argv[0] << " cmd_num" << endl;
+		return;
+	}
 
-	tcp->SetupConsole();
+	CTcpFactory *factory = CTcpFactory::Instance();
 
-	while(1)
-		tcp->AcceptAndRecv();
+	int mode = atoi(argv[1]);
 
-	delete tcp;
+	if(mode == 0){
+		int res = factory->CreateTcp(port);
+		io << "Factory " << (res ? "failed to create" : "created") << " tcp server at port " << port << endl;
+		if(res)
+			io << "Error code: " << res << endl;
+
+		CTcp *tcp = factory->GetTcpByPort(port);
+		if(!tcp){
+			io << "Cannot get tcp by port" << endl;
+			return;
+		}
+
+		io << "Setup console: " << tcp->SetupConsole() << endl;
+		io << "Handle client: " << tcp->AcceptAndHandle() << endl;
+	} else if(mode == 1){
+		CTcp *tcp = factory->GetTcpByPort(port);
+		if(!tcp){
+			io << "Cannot get tcp by port" << endl;
+			return;
+		}
+
+		*tcp << "Bye, client on port " << port << endl;
+		io << "Drop client: " << tcp->DropClient() << endl;
+	}
 }

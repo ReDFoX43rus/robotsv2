@@ -14,6 +14,7 @@ CTcp::CTcp(uint16_t port){
 	m_QueueBack = 0;
 	m_BuffSem = xSemaphoreCreateMutex();
 	m_ConsoleTask = 0;
+	m_ClientHandleTask = 0;
 }
 
 CTcp::~CTcp(){
@@ -57,59 +58,71 @@ int CTcp::Init(){
 	return 0;
 }
 
-int CTcp::AcceptAndRecv(){
-	struct sockaddr_in client_addr;
-	socklen_t socklen = sizeof(client_addr);
+void CTcp::HandleClient(void *arg){
+	CTcp *tcp = (CTcp*)arg;
+	while(1){
+		struct sockaddr_in client_addr;
+		socklen_t socklen = sizeof(client_addr);
 
-	uart << "Tcp server is waiting for a client..." << endl;
+		// uart << "Tcp server is waiting for a client..." << endl;
 
-	m_ConnectSocket = accept(m_ServerSocket, (struct sockaddr *)&client_addr, &socklen);
+		tcp->m_ConnectSocket = accept(tcp->m_ServerSocket, (struct sockaddr *)&client_addr, &socklen);
 
-	if (m_ConnectSocket < 0) {
-		show_socket_error_reason("accept_server", m_ConnectSocket);
-		close(m_ServerSocket);
-		return -1;
-	}
-
-	/*connection established，now can send/recv*/
-	uart << "Client accepted" << endl;
-
-	char buff[TCPIO_RECV_BUFF_SIZE];
-	int len, to_write;
-	int currentBuffSize = 0;
-
-	while((len = recv(m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
-
-		while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
-			vTaskDelay(pdMS_TO_TICKS(50));
-
-		if(m_QueueFront + len > TCPIO_MAX_BUFF_SIZE)
-			BalanceQueue();
-
-		to_write = m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE ? len : TCPIO_MAX_BUFF_SIZE - m_QueueFront;
-		memcpy(m_IOQueue + m_QueueFront, buff, to_write);
-		m_QueueFront += to_write;
-
-		if(len - to_write != 0){
-			*this << "Lost " << len - to_write << " bytes" << endl;
+		if (tcp->m_ConnectSocket < 0) {
+			show_socket_error_reason("accept_server", tcp->m_ConnectSocket);
+			close(tcp->m_ServerSocket);
+			tcp->m_ClientHandleTask = 0;
+			vTaskDelete(NULL);
 		}
 
-		currentBuffSize = m_QueueFront - m_QueueBack;
+		/*connection established，now can send/recv*/
+		// uart << "Client accepted" << endl;
 
-		// uart << "Back: " << m_QueueBack << " Front: " << m_QueueFront << endl;
+		char buff[TCPIO_RECV_BUFF_SIZE];
+		int len, to_write;
+		int currentBuffSize = 0;
 
-		// uart << "recv: ";
-		// uart.Write(buff, to_write);
-		// uart << endl;
+		while((len = recv(tcp->m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
 
-		xSemaphoreGive(m_BuffSem);
-		if(currentBuffSize == TCPIO_MAX_BUFF_SIZE)
-			vTaskDelay(pdMS_TO_TICKS(350));
+			while(xSemaphoreTake(tcp->m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
+				vTaskDelay(pdMS_TO_TICKS(50));
+
+			if(tcp->m_QueueFront + len > TCPIO_MAX_BUFF_SIZE)
+				tcp->BalanceQueue();
+
+			to_write = tcp->m_QueueFront + len <= TCPIO_MAX_BUFF_SIZE ? len : TCPIO_MAX_BUFF_SIZE - tcp->m_QueueFront;
+			memcpy(tcp->m_IOQueue + tcp->m_QueueFront, buff, to_write);
+			tcp->m_QueueFront += to_write;
+
+			if(len - to_write != 0){
+				*tcp << "Lost " << len - to_write << " bytes" << endl;
+			}
+
+			currentBuffSize = tcp->m_QueueFront - tcp->m_QueueBack;
+
+			xSemaphoreGive(tcp->m_BuffSem);
+			if(currentBuffSize == TCPIO_MAX_BUFF_SIZE)
+				vTaskDelay(pdMS_TO_TICKS(350));
+		}
 	}
+}
 
+int CTcp::AcceptAndHandle(){
+	if(m_ClientHandleTask != 0)
+		return -1;
+
+	return xTaskCreate(HandleClient, "tcp_client_handle", 4096, this, 4, &m_ClientHandleTask) != pdTRUE ? -2 : 0;
+}
+
+int CTcp::DropClient(){
+	if(m_ClientHandleTask == 0)
+		return -1;
+
+	vTaskDelete(m_ClientHandleTask);
+	m_ClientHandleTask = 0;
 	close(m_ConnectSocket);
-
-	return len;
+	Flush();
+	return 0;
 }
 
 void CTcp::AttachToConsole(void *arg){
@@ -118,6 +131,9 @@ void CTcp::AttachToConsole(void *arg){
 }
 
 int CTcp::SetupConsole(){
+	if(m_ConsoleTask != 0)
+		return -2;
+
 	return xTaskCreate(AttachToConsole, "tcp_console", 4096, this, 4, &m_ConsoleTask) != pdTRUE ? -1 : 0;
 }
 

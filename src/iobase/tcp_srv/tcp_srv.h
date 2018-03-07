@@ -17,8 +17,10 @@ public:
 	~CTcp();
 
 	int Init();
-	int AcceptAndRecv();
+	int AcceptAndHandle();
+	int DropClient();
 	void Flush() {m_QueueBack = 0; m_QueueFront = 0;}
+	
 	int SetupConsole();
 	void DestroyConsole();
 
@@ -28,6 +30,7 @@ public:
 	int GetBufferedDataLength();
 	int GetBytes(char *data, size_t size);
 
+	uint16_t GetPort() {return m_Port;}
 private:
 	uint16_t m_Port;
 	int m_ServerSocket;
@@ -42,6 +45,9 @@ private:
 
 	TaskHandle_t m_ConsoleTask;
 	static void AttachToConsole(void *arg);
+
+	TaskHandle_t m_ClientHandleTask;
+	static void HandleClient(void *arg);
 
 	static int show_socket_error_reason(const char *str, int socket);
 	static int get_socket_error_code(int socket);
