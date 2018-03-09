@@ -18,5 +18,6 @@ void CmdAuthHandler(CIOBase &io, int argc, char *argv[]){
 
 	int res = auth->TryAuth(argv[1]);
 	io << "Auth " << (res == 0 ? "success" : "failed") << endl;
-	io << "Error code: " << res << endl;
+	if(res)
+		io << "Error code: " << res << endl;
 }
