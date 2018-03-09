@@ -1,7 +1,9 @@
 #ifndef SENSORS_HANDLER_C_H
 #define SENSORS_HANDLER_C_H
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 enum SENSOR_IDS{
 	SENSOR_COLOR_RED=0,
@@ -25,6 +27,8 @@ enum SENSOR_IDS{
 int handle_sensor(int sensor_id, const int *data);
 void set_voltage(int pin, int level);
 
+#ifdef __cplusplus
 }
+#endif
 
 #endif /* end of include guard: SENSORS_HANDLER_C_H */

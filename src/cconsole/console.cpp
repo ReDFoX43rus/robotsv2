@@ -52,3 +52,7 @@ void CConsole::WaitForCmd(CIOBase &io){
 
 	free(str);
 }
+
+extern "C" int system(const char *cmd){
+	return console.HandleCmd(uart, (char*)cmd) ? 0 : -1;
+}
