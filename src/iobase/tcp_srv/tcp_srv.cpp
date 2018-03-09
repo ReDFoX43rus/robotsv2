@@ -170,6 +170,7 @@ _take_sem:
 
 	if(m_QueueBack == m_QueueFront){
 		xSemaphoreGive(m_BuffSem);
+		vTaskDelay(pdMS_TO_TICKS(50));
 		goto _take_sem;
 	}
 

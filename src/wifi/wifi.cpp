@@ -86,15 +86,14 @@ int CWifi::Init(){
 	if(esp_wifi_init(&cfg) != ESP_OK)
 		return -3;
 
-	wifi_config_t wifi_config;
 	wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
 	wifi_config.sta.channel = 0;
 
-	if(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) != ESP_OK)
-		return -6;
-
 	if(esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK)
 		return -4;
+
+	if(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) != ESP_OK)
+		return -6;
 
 	if(esp_wifi_start() != ESP_OK)
 		return -5;

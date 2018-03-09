@@ -9,8 +9,9 @@ void CmdWifiHandler(CIOBase &io, int argc, char **argv){
 		io << "Usage: wifi [cmd]" << endl;
 	}
 
-	if(!strcmp(argv[1], "init"))
+	if(!strcmp(argv[1], "init")) {
 		io << "wifi init: " << wifi.Init() << endl;
+	}
 	else if(!strcmp(argv[1], "scan")){
 		int res;
 		for(int i = 1; i <= 13; i++){

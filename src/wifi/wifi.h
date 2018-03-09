@@ -15,10 +15,11 @@ public:
 	~CWifi();
 
 	int Init();
+	int Destroy();
 	int Search(uint8_t channel);
 	void ListScanRecords();
 	int Connect(char *ssid, char *pwd);
-	//int wifi_init_sta(const char *ssid, const char *pwd);
+
 private:
 	bool m_Inited;
 	wifi_ap_record_t *m_ScanRecords;
