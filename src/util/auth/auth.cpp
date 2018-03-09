@@ -22,7 +22,6 @@ int CAuth::TryAuth(const char* pwd){
 	file.GetString(truePwd, AUTH_PWD_LENGTH);
 
 	truePwd[size] = '\0';
-	uart << "Pass1: " << truePwd << " Pass2: " << pwd << endl;
 
 	int res;
 	if(!strcmp(truePwd, pwd)){
