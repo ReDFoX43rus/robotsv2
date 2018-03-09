@@ -66,21 +66,35 @@ static int lua_get_count_sensor_args(int id)
 {
 	switch (id) {
 		case SENSOR_COLOR_RED:
+			return 5;
 		case SENSOR_COLOR_GREEN:
+			return 5;
 		case SENSOR_COLOR_BLUE:
+			return 5;
 		case SENSOR_COMPASS_X:
+			return 0;
 		case SENSOR_COMPASS_Y:
+			return 0;
 		case SENSOR_COMPASS_Z:
+			return 0;
 		case SENSOR_COMPASS_ANGLE:
+			return 0;
 		case SENSOR_LINE_AN:
+			return 1;
 		case SENSOR_FLAME_AN:
+			return 1;
 		case SENSOR_SHARP:
+			return 1;
 		case SENSOR_SOUND:
+			return 0;
 		case SENSOR_CRASH_BUTTON:
+			return 1;
 		case SENSOR_HCSR04:
 			return 2;
 		case SENSOR_LINE_DIG:
+			return 1;
 		case SENSOR_FLAME_DIG:
+			return 1;
 		default:
 			return 0;
 	}
@@ -118,15 +132,20 @@ static int lua_get_sensor_data(lua_State *state)
 		return 0;
 
 	int count = lua_get_count_sensor_args(id.data);
-	if (count < 1)
+	if (count < 0)
 		return 0;
 
 	if (argc - count != 1)
 		return 0;
 
-	int *pins = lua_get_sensor_pins(state, count);
-	if (!pins)
-		return 0;
+	int *pins = NULL;
+
+	if(count)
+	{
+		pins = lua_get_sensor_pins(state, count);
+		if (!pins)
+			return 0;
+	}
 
 	int result = handle_sensor(id.data, pins);
 	free(pins);
