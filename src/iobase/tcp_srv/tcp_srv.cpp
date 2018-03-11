@@ -3,10 +3,11 @@
 #include <sys/socket.h>
 #include "esp_log.h"
 #include "string.h"
+#include "time.h"
 #include "uart.h"
 #include "cconsole/console.h"
 
-CTcp::CTcp(uint16_t port){
+CTcp::CTcp(uint16_t port, uint32_t heartbeatDelay){
 	m_Port = port;
 	m_ServerSocket = 0;
 	m_ConnectSocket = 0;
@@ -15,15 +16,32 @@ CTcp::CTcp(uint16_t port){
 	m_BuffSem = xSemaphoreCreateMutex();
 	m_ConsoleTask = 0;
 	m_ClientHandleTask = 0;
+	m_HeartbeatDelay = heartbeatDelay;
+	m_LastHeartbeat = 0;
+	m_CheckHeartbeatTask = 0;
+
+	if(heartbeatDelay){
+		m_HeartbeatSem = xSemaphoreCreateMutex();
+		xTaskCreate(CheckHeartbeat, "tcp_check_heartbeat", 2048, this, 1, &m_CheckHeartbeatTask);
+	}
 }
 
 CTcp::~CTcp(){
+	DestroyClientHandler();
+	DestroyConsole();
+
+	if(m_CheckHeartbeatTask)
+		vTaskDelete(m_CheckHeartbeatTask);
+
 	if(m_ConnectSocket)
 		close(m_ConnectSocket);
 	if(m_ServerSocket)
 		close(m_ServerSocket);
 
 	vSemaphoreDelete(m_BuffSem);
+
+	if(m_HeartbeatDelay)
+		vSemaphoreDelete(m_HeartbeatSem);
 }
 
 int CTcp::Init(){
@@ -72,6 +90,7 @@ void CTcp::HandleClient(void *arg){
 			show_socket_error_reason("accept_server", tcp->m_ConnectSocket);
 			close(tcp->m_ServerSocket);
 			tcp->m_ClientHandleTask = 0;
+			tcp->m_ConnectSocket = 0;
 			vTaskDelete(NULL);
 		}
 
@@ -113,6 +132,11 @@ void CTcp::HandleClient(void *arg){
 
 				break;
 			}
+
+			if(tcp->m_HeartbeatDelay && xSemaphoreTake(tcp->m_HeartbeatSem, TCPIO_SEM_WAIT_TIME) == pdTRUE){
+				tcp->m_LastHeartbeat = clock() / CLOCKS_PER_SEC;
+				xSemaphoreGive(tcp->m_HeartbeatSem);
+			}
 		}
 	}
 }
@@ -139,6 +163,11 @@ int CTcp::DropClient(){
 
 	close(m_ConnectSocket);
 	Flush();
+
+	xSemaphoreTake(m_HeartbeatSem, TCPIO_SEM_WAIT_TIME);
+	m_LastHeartbeat = 0;
+	xSemaphoreGive(m_HeartbeatSem);
+
 	return 0;
 }
 
@@ -163,22 +192,21 @@ void CTcp::DestroyConsole(){
 
 uint32_t CTcp::GetChar(){
 	char ret;
+	while(1){
+		while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
+			;
 
-_take_sem:
-	while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
-		;
+		if(m_QueueBack == m_QueueFront){
+			xSemaphoreGive(m_BuffSem);
+			vTaskDelay(pdMS_TO_TICKS(50));
+			continue;
+		}
 
-	if(m_QueueBack == m_QueueFront){
+		ret = m_IOQueue[m_QueueBack++];
+
 		xSemaphoreGive(m_BuffSem);
-		vTaskDelay(pdMS_TO_TICKS(50));
-		goto _take_sem;
+		break;
 	}
-
-	ret = m_IOQueue[m_QueueBack++];
-
-	// uart << "Returning char... Queue back: " << m_QueueBack << " queue front: " << m_QueueFront << endl;
-
-	xSemaphoreGive(m_BuffSem);
 
 	return ret;
 }
@@ -203,25 +231,26 @@ int CTcp::GetBufferedDataLength() {
 	return len;
 }
 int CTcp::GetBytes(char *data, size_t size){
-_getBytes_take_sem:
-	while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
-		;
+	while(1){
+		while(xSemaphoreTake(m_BuffSem, TCPIO_SEM_WAIT_TIME) != pdTRUE)
+			;
 
-	int buffSize = m_QueueFront - m_QueueBack;
-	if(!buffSize){
+		int buffSize = m_QueueFront - m_QueueBack;
+		if(!buffSize){
+			xSemaphoreGive(m_BuffSem);
+			vTaskDelay(pdMS_TO_TICKS(50));
+			continue;
+		}
+
+		if(size > buffSize)
+			size = buffSize;
+
+		memcpy(data, m_IOQueue + m_QueueBack, size);
+		m_QueueBack += size;
+
 		xSemaphoreGive(m_BuffSem);
-		vTaskDelay(pdMS_TO_TICKS(50));
-		goto _getBytes_take_sem;
+		break;
 	}
-
-	if(size > buffSize)
-		size = buffSize;
-
-	memcpy(data, m_IOQueue + m_QueueBack, size);
-	m_QueueBack += size;
-
-	xSemaphoreGive(m_BuffSem);
-
 	return size;
 }
 
@@ -231,6 +260,24 @@ void CTcp::BalanceQueue(){
 
 	m_QueueFront -= m_QueueBack;
 	m_QueueBack = 0;
+}
+
+void CTcp::CheckHeartbeat(void *arg){
+	CTcp *tcp = (CTcp*)arg;
+
+	while(1){
+		/* Check if clients havent connected yet */
+		if(!tcp->m_LastHeartbeat){
+			vTaskDelay(pdMS_TO_TICKS(tcp->m_HeartbeatDelay));
+			continue;
+		}
+
+		uint32_t now = clock() / CLOCKS_PER_SEC;
+		if(now - tcp->m_LastHeartbeat > tcp->m_HeartbeatDelay)
+			tcp->DropClient(); // Try it without semaphore, and fix it if needed xd
+
+		vTaskDelay(tcp->m_HeartbeatDelay);
+	}
 }
 
 int CTcp::get_socket_error_code(int socket)
