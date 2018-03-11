@@ -14,10 +14,17 @@ public:
 	CWifi();
 	~CWifi();
 
+	/* Init wifi. Currently supported only STA mode
+	 * TODO: split wifi related functions and other functions in implementation */
 	int Init();
-	int Destroy();
+
+	/* Start searching new APs */
 	int Search(uint8_t channel);
+
+	/* Print searching result in uart */
 	void ListScanRecords();
+
+	/* Connect to specified AP */
 	int Connect(char *ssid, char *pwd);
 
 private:

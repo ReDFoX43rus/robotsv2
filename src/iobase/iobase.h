@@ -26,7 +26,9 @@ public:
 	/* Returns number of written bytes */
 	virtual size_t Write(const char *data, size_t size);
 
+	/* Get number of chars stored in buffer-oriented io devices */
 	virtual int GetBufferedDataLength();
+	/* Get bytes from buffer */
 	virtual int GetBytes(char *data, size_t size);
 
 	/* Read and write overloads */
@@ -42,6 +44,7 @@ public:
 	CIOBase &operator>>(uint32_t &data);
 
 private:
+	/* Get string untill space, \n, \r or another terminating chars */
 	bool GetWord(char *string, size_t size, size_t &from, int &reason);
 };
 

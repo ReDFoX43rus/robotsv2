@@ -42,15 +42,19 @@ int lua_handler_destroy(int handler_n)
 	return 0;
 }
 
+/* For our purposes eported functions should be called with atleast 1 arg
+ * This function is ok oly for current purposes */
 static int lua_check_count_args(lua_State *state)
 {
 	int args = lua_gettop(state);
-	if (args < 2)
+	if (args < 1)
 		return -1;
 
 	return args;
 }
 
+/* Returns error if element with specified index isnt int, otherwise returns int
+ * This function is ok only for current purposes */
 static lua_chk_t lua_check_and_get_value(lua_State *state, int index)
 {
 	lua_chk_t check = { 0, 0 };
@@ -62,6 +66,7 @@ static lua_chk_t lua_check_and_get_value(lua_State *state, int index)
 	return check;
 }
 
+/* Returns required number of args depending on sensor id */
 static int lua_get_count_sensor_args(int id)
 {
 	switch (id) {
@@ -100,6 +105,8 @@ static int lua_get_count_sensor_args(int id)
 	}
 }
 
+/* Get required args 1 by 1
+ * Returns NULL on fail, otherwise array of ints */
 static int* lua_get_sensor_pins(lua_State *state, int count)
 {
 	int *pins = (int*)malloc(sizeof(int)*count);
@@ -119,6 +126,9 @@ static int* lua_get_sensor_pins(lua_State *state, int count)
 	return pins;
 }
 
+/* Function to export to lua
+ * Checks all conditions and returns sensor data on success
+ * Returns 0 on fail */
 static int lua_get_sensor_data(lua_State *state)
 {
 	int c = 0;

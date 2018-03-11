@@ -8,8 +8,13 @@
 extern "C" {
 #endif
 
+/* Setup i2c and semaphore */
 void i2c_master_setup(i2c_port_t num, gpio_num_t sda, gpio_num_t scl, uint32_t freq);
+
+/* Release i2c and semaphore */
 void i2c_release(i2c_port_t num);
+
+/* Call i2c_master_cmd_begin protected by semaphore */
 esp_err_t i2c_master_cmd_begin_safe(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait);
 
 #ifdef __cplusplus

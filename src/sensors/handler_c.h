@@ -1,3 +1,6 @@
+/* Unified place to get sensor data from C code
+ * This is needed for RuC and lua to get data */
+
 #ifndef SENSORS_HANDLER_C_H
 #define SENSORS_HANDLER_C_H
 
