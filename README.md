@@ -1,6 +1,6 @@
 # ESP32 Robots (& IoT) Framework
 
-This framework is on development state right now
+This framework is on develop state right now
 
 ### Purposes:
 * Make different kinds of robots (and RC models such as quadrocopters)
