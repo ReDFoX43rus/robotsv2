@@ -231,15 +231,15 @@ int t_sem_destroy(int sem){
 }
 int t_sem_wait(int numSem){
 	STAKE_OR_DIE();
-	while(xSemaphoreTake(sems[numSem].semaphore, DEFAULT_WAIT_TICKS) != pdTRUE)
-		;
+	if(xSemaphoreTake(sems[numSem].semaphore, DEFAULT_WAIT_TICKS) != pdTRUE)
+		return -2;
 	SGIVE_OR_DIE();
 	return 0;
 }
 int t_sem_post(int numSem){
 	STAKE_OR_DIE();
-	while(xSemaphoreGive(sems[numSem].semaphore) != pdTRUE)
-		;
+	if(xSemaphoreGive(sems[numSem].semaphore) != pdTRUE)
+		return -2
 	SGIVE_OR_DIE();
 	return 0;
 }
