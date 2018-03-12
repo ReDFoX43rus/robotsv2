@@ -51,6 +51,7 @@ static void collector(void* arg){
 		threads[th_id].status = OBJ_FREE;
 		vTaskDelete(threads[th_id].handle);
 		threads[th_id].handle = 0;
+		vSemaphoreDelete(threads[th_id].msg_sem)
 
 		/* enable interrupts */
 		taskENABLE_INTERRUPTS();
