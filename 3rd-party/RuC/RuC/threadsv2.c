@@ -132,7 +132,6 @@ int t_destroy(void){
 
 	return 0;
 }
-
 int t_create_inner(TaskFunction_t func, void* arg){
 	TAKE_OR_DIE();
 
@@ -154,7 +153,6 @@ int t_create_inner(TaskFunction_t func, void* arg){
 	GIVE_OR_DIE();
 	return new_thread_id;
 }
-
 int t_getThNum(void){
 	int retval = -2;
 	TAKE_OR_DIE();
@@ -170,7 +168,6 @@ int t_getThNum(void){
 	GIVE_OR_DIE();
 	return retval;
 }
-
 int t_exit(void){
 	int num = t_getThNum();
 	if(num < 0)
@@ -190,7 +187,6 @@ int t_exit(void){
 
 	return 0;
 }
-
 int t_sem_create(int level){
 	STAKE_OR_DIE();
 	int new_id = get_free_sem_num();
@@ -260,25 +256,41 @@ int t_msg_send(thmsg_t msg){
 		return -2;
 	}
 	thread_t *to = &threads[n];
+	TaskHandle_t to_handle = to->handle;
 	GIVE_OR_DIE();
 
-	if(xSemaphoreTake(to->msg_sem, DEFAULT_WAIT_TICKS) != pdTRUE)
-		return -3;
+	int resume_receiver = 0;
+	while(1){
 
-	if(to->msgs_n >= MAX_SEMS){
-		xSemaphoreGive(to->msg_sem);
-		return -5;
+		if(xSemaphoreTake(to->msg_sem, DEFAULT_WAIT_TICKS) != pdTRUE)
+			return -3;
+
+		if(to->msgs_n <= 0){
+			resume_receiver = 1;
+		}
+
+		if(to->msgs_n >= MAX_SEMS){
+			xSemaphoreGive(to->msg_sem);
+			vTaskSuspend(NULL);
+			continue;
+		}
+
+		to->msgs[to->msgs_n] = msg;
+		to->msgs[to->msgs_n++].thread_n = current_thread_n;
+
+		if(resume_receiver){
+			resume_receiver = 0;
+			while(eTaskGetState(to_handle) != eSuspended)
+				vTaskDelay(pdMS_TO_TICKS(50));
+			vTaskResume(to_handle);
+		}
+
+		if(xSemaphoreGive(to->msg_sem) != pdTRUE)
+			return -4;
+
+		return 0;
+
 	}
-
-	to->msgs[to->msgs_n] = msg;
-	to->msgs[to->msgs_n++].thread_n = current_thread_n;
-
-	/* eIncrement - increments task's notification value */
-	xTaskNotify(to->handle, 0, eIncrement);
-
-	if(xSemaphoreGive(to->msg_sem) != pdTRUE)
-		return -4;
-
 	return 0;
 }
 thmsg_t t_msg_receive(void){
@@ -287,20 +299,12 @@ thmsg_t t_msg_receive(void){
 		.data = 0
 	};
 
-	/* pdFALSE - decrement task's notification value */
-	uint32_t was_msgs = ulTaskNotifyTake(pdFALSE, DEFAULT_WAIT_TICKS);
-	if(!was_msgs){
-		retval.thread_n = -3;
-		return retval;
-	}
-
 	int current_thread_n = t_getThNum();
 	if(current_thread_n < 0){
 		retval.thread_n = -2;
 		return retval;
 	}
 
-	/*TAKE_OR_DIE();*/
 	if(xSemaphoreTake(th_sem, DEFAULT_WAIT_TICKS) != pdTRUE){
 		retval.thread_n = -1;
 		return retval;
@@ -308,18 +312,45 @@ thmsg_t t_msg_receive(void){
 	thread_t *current = &threads[current_thread_n];
 	xSemaphoreGive(th_sem);
 
-	if(xSemaphoreTake(current->msg_sem, DEFAULT_WAIT_TICKS) != pdTRUE){
-		retval.thread_n = -4;
-		return retval;
-	}
+	int resume_sender = 0;
+	while(1){
+		if(xSemaphoreTake(current->msg_sem, DEFAULT_WAIT_TICKS) != pdTRUE){
+			retval.thread_n = -4;
+			return retval;
+		}
 
-	if(current->msgs_n > 0){
+		if(current->msgs_n >= MAX_SEMS){
+			resume_sender = 1;
+		}
+
+		if(current->msgs_n <= 0){
+			xSemaphoreGive(current->msg_sem);
+			vTaskSuspend(NULL);
+			continue;
+		}
+
 		retval = current->msgs[current->msgs_n];
-
 		current->msgs_n--;
-	} else retval.thread_n = -5;
 
-	xSemaphoreGive(current->msg_sem);
+		int from_id = retval.thread_n;
+		while(xSemaphoreTake(th_sem, DEFAULT_WAIT_TICKS) != pdTRUE)
+			;
+
+		TaskHandle_t from_handle = threads[from_id].handle;
+
+		xSemaphoreGive(th_sem);
+
+		if(resume_sender){
+			resume_sender = 0;
+			while(eTaskGetState(from_handle) != eSuspended)
+				vTaskDelay(pdMS_TO_TICKS(50));
+			vTaskResume(from_handle);
+		}
+
+		xSemaphoreGive(current->msg_sem);
+
+		break;
+	}
 
 	return retval;
 }
