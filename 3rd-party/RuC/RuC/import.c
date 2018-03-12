@@ -461,8 +461,6 @@ void interpreter(void* pcPnt)
 			case EXITDIRECTC:
 			case EXITC:
 				// since t_eixt terminates current thread, we have to care about t_destroy here
-				t_prepare_exit();
-				handle_end_of_thread();
 				t_exit();
 				break;
 
