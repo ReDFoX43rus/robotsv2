@@ -16,10 +16,10 @@ static SemaphoreHandle_t sem_sem;
 
 static TaskHandle_t collectorHandle;
 /* stack of threads discriptors to release */
-static int threads_to_release[MAX_THREADS];
+static SemaphoreHandle_t clctr_sem = 0;
 /* stack pointer */
-static int release_p;
-static SemaphoreHandle_t collector_sem;
+static int release_p = -1;
+static int threads_to_release[MAX_THREADS];
 
 static inline int is_collector_suspended(void){
 	return eTaskGetState(collectorHandle) == eSuspended;
@@ -28,17 +28,26 @@ static inline int is_collector_suspended(void){
 static void collector(void* arg){
 	int th_id;
 	while(1){
-		if(xSemaphoreTake(collector_sem, DEFAULT_WAIT_TICKS) != pdTRUE)
+		printf("collector is trying to take sem 0x%X\n", (uint32_t)clctr_sem);
+		vTaskDelay(pdMS_TO_TICKS(1000));
+		if(xSemaphoreTake(clctr_sem, DEFAULT_WAIT_TICKS) != pdTRUE){
+			printf("collector failed to take sem\n");
+			vTaskDelay(DEFAULT_WAIT_TICKS);
 			continue;
+		} else printf("collector took sem\n");
 
 		if(release_p < 0){
-			xSemaphoreGive(collector_sem);
+			xSemaphoreGive(clctr_sem);
+			printf("collector released sem 1, suspending...\n");
 			vTaskSuspend(NULL);
+			printf("collector resumed\n");
+			vTaskDelay(pdMS_TO_TICKS(1000));
 			continue;
 		}
 
 		th_id = threads_to_release[release_p--];
-		xSemaphoreGive(collector_sem);
+		xSemaphoreGive(clctr_sem);
+		printf("collector released sem 2\n");
 
 		while(xSemaphoreTake(th_sem, DEFAULT_WAIT_TICKS) != pdTRUE)
 			;
@@ -48,10 +57,10 @@ static void collector(void* arg){
 		/* disable scheduler */
 		vTaskSuspendAll();
 
-		threads[th_id].status = OBJ_FREE;
-		vTaskDelete(threads[th_id].handle);
-		threads[th_id].handle = 0;
-		vSemaphoreDelete(threads[th_id].msg_sem)
+		// threads[th_id].status = OBJ_FREE;
+		// vTaskDelete(threads[th_id].handle);
+		// threads[th_id].handle = 0;
+		// vSemaphoreDelete(threads[th_id].msg_sem);
 
 		/* enable interrupts */
 		taskENABLE_INTERRUPTS();
@@ -83,39 +92,64 @@ static inline int get_free_sem_num(void){
 }
 
 int t_init(void){
+	int debug = 0;
+
+	// printf("init %d\n", debug++);
+
 	th_sem = xSemaphoreCreateMutex();
 	if(th_sem == NULL)
 		return -2;
 
+	// printf("init %d\n", debug++);
+
 	TAKE_OR_DIE();
+	// printf("init %d\n", debug++);
 	threads[0].handle = xTaskGetCurrentTaskHandle();
 	threads[0].status = OBJ_INITED;
 	threads[0].msg_sem = xSemaphoreCreateMutex();
 	GIVE_OR_DIE();
 
+	// printf("init %d\n", debug++);
+
 	sem_sem = xSemaphoreCreateMutex();
 	if(!sem_sem)
 		return -3;
 
-	collector_sem = xSemaphoreCreateMutex();
-	if(!collector_sem)
+	// printf("init %d\n", debug++);
+
+	release_p = -1;
+	clctr_sem = xSemaphoreCreateMutex();
+	if(!clctr_sem)
 		return -4;
 
-	if(xTaskCreate(collector, "ruc_collector", STACK_SIZE, NULL, 32, &collectorHandle) != pdTRUE)
-		return -5;
+	// printf("init %d\n", debug++);
+
+	// if(xTaskCreate(collector, "ruc_collector", STACK_SIZE, NULL, 5, &collectorHandle) != pdTRUE)
+	// 	return -5;
+
+	// printf("init %d\n", debug++);
 
 	return 0;
 }
 int t_destroy(void){
+	int debug = 0;
+
+	// printf("destroy %d\n", debug++);
+
 	TAKE_OR_DIE();
+	// printf("destroy %d\n", debug++);
 	for(int i = 0; i < MAX_THREADS; i++){
 		if(threads[i].status == OBJ_INITED){
 			vSemaphoreDelete(threads[i].msg_sem);
+			vTaskDelete(threads[i].handle);
 		}
 	}
 	GIVE_OR_DIE();
 
+	// printf("destroy %d\n", debug++);
+
 	STAKE_OR_DIE();
+	// printf("destroy %d\n", debug++);
 	for(int i = 0; i < MAX_SEMS; i++){
 		if(sems[i].status == OBJ_INITED){
 			xSemaphoreGive(sems[i].semaphore);
@@ -125,16 +159,22 @@ int t_destroy(void){
 	}
 	SGIVE_OR_DIE();
 
+	// printf("destroy %d\n", debug++);
+
 	vSemaphoreDelete(th_sem);
 	vSemaphoreDelete(sem_sem);
 
 	vTaskDelete(collectorHandle);
-	vSemaphoreDelete(collector_sem);
+	vSemaphoreDelete(clctr_sem);
 
 	return 0;
 }
 int t_create_inner(TaskFunction_t func, void* arg){
+	int debug = 0;
+	// printf("create_inner %d\n", debug++);
 	TAKE_OR_DIE();
+
+	// printf("create_inner %d\n", debug++);
 
 	int new_thread_id = get_free_th_num();
 	if(new_thread_id == -1){
@@ -142,16 +182,23 @@ int t_create_inner(TaskFunction_t func, void* arg){
 		return -1;
 	}
 
-	if(xTaskCreatePinnedToCore(func, "ruc_task", STACK_SIZE, arg, 1, &threads[new_thread_id].handle, 0) != pdPASS){
+	// printf("create_inner %d\n", debug++);
+
+	if(xTaskCreate(func, "ruc_task", STACK_SIZE, arg, 1, &(threads[new_thread_id].handle)) != pdPASS){
 		GIVE_OR_DIE();
 		return -1;
 	}
+
+	// printf("create_inner %d\n", debug++);
 
 	threads[new_thread_id].status = OBJ_INITED;
 	threads[new_thread_id].msg_sem = xSemaphoreCreateMutex();
 	threads[new_thread_id].msgs_n = 0;
 
+	// printf("create_inner %d\n", debug++);
+
 	GIVE_OR_DIE();
+	// printf("create_inner %d\n", debug++);
 	return new_thread_id;
 }
 int t_getThNum(void){
@@ -170,21 +217,35 @@ int t_getThNum(void){
 	return retval;
 }
 int t_exit(void){
+	int debug = 0;
+	// printf("exit %d\n", debug++);
 	int num = t_getThNum();
 	if(num < 0)
 		return num*100;
 
-	while(xSemaphoreTake(collector_sem, DEFAULT_WAIT_TICKS) != pdTRUE)
-		;
+	printf("exit %d, taking sem 0x%X\n", debug++, (uint32_t)clctr_sem);
+
+	while(xSemaphoreTake(clctr_sem, DEFAULT_WAIT_TICKS) != pdTRUE)
+		vTaskDelay(DEFAULT_WAIT_TICKS);
+
+	// printf("exit %d, sem: 0x%X\n", debug++, (uint32_t)clctr_sem);
 
 	threads_to_release[release_p++] = num;
 
 	while(is_collector_suspended() != 1)
 		vTaskDelay(pdMS_TO_TICKS(5));
 
+	// printf("exit %d, sem: 0x%X\n", debug++, (uint32_t)clctr_sem);
+
 	vTaskResume(collectorHandle);
 
-	xSemaphoreGive(collector_sem);
+	// printf("exit: collector resumed, giving sem: 0x%X\n", (uint32_t)clctr_sem);
+
+	if(xSemaphoreGive(clctr_sem) != pdTRUE)
+		printf("exit cannot give sem\n");
+	else printf("exit gave sem 0x%X\n", (uint32_t)clctr_sem);
+
+	// printf("exit %d\n", debug++);
 
 	return 0;
 }
@@ -240,7 +301,7 @@ int t_sem_wait(int numSem){
 int t_sem_post(int numSem){
 	STAKE_OR_DIE();
 	if(xSemaphoreGive(sems[numSem].semaphore) != pdTRUE)
-		return -2
+		return -2;
 	SGIVE_OR_DIE();
 	return 0;
 }
@@ -354,4 +415,63 @@ thmsg_t t_msg_receive(void){
 	}
 
 	return retval;
+}
+
+#define RUC_TEST_MAX_WORKERS 2
+
+static int counter = 1;
+static int sem;
+static int max_workers = RUC_TEST_MAX_WORKERS;
+static SemaphoreHandle_t test_sem;
+
+static void release_test(int from){
+	xSemaphoreTake(test_sem, DEFAULT_WAIT_TICKS);
+
+	printf("%d workers left\n", --max_workers);
+
+	xSemaphoreGive(test_sem);
+
+	if(!max_workers){
+		//t_destroy();
+		//vSemaphoreDelete(test_sem);
+	}// else t_exit();
+}
+
+void ruc_test_worker(void *arg){
+	// int th_num = (int)arg;
+	// int err;
+	// for(int i = 0; i < 5; i++){
+	// 	if((err = t_sem_wait(sem)) < 0){
+	// 		printf("#%d: cannot take sem %d\n", th_num, err);
+	// 		release_test(th_num);
+	// 		return;
+	// 	}
+	// 	// printf("#%d: counter: %d\n", th_num, counter++);
+	// 	vTaskDelay(pdMS_TO_TICKS(1200));
+	// 	if((err = t_sem_post(sem)) < 0){
+	// 		printf("#%d: cannot release sem %d\n", th_num, err);
+	// 		release_test(th_num);
+	// 		return;
+	// 	}
+	// }
+    //
+	// release_test(th_num);
+	vTaskDelay(pdMS_TO_TICKS(100));
+}
+
+void test_ruc_threadsv2(void){
+	//test_sem = xSemaphoreCreateMutex();
+
+	//printf("init: %d\n", t_init());
+	//int w = t_create_inner(ruc_test_worker, NULL);
+	int w = xTaskCreate(ruc_test_worker, "ruc_test_worker", 2048, NULL, 1, NULL) == pdTRUE;
+	printf("W: %d\n", w);
+	// sem = t_sem_create(0);
+	// int workers[RUC_TEST_MAX_WORKERS];
+	// for(int i = 0; i < RUC_TEST_MAX_WORKERS; i++){
+	// 	workers[i] = t_create_inner(worker, (void*)(i+1));
+	// 	if(!workers[i]){
+	// 		printf("Cannot create thread %d %d\n", i, workers[i]);
+	// 	}
+	// }
 }

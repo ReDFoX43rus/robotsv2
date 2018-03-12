@@ -13,7 +13,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#define DEFAULT_WAIT_TICKS pdMS_TO_TICKS(100)
+#define DEFAULT_WAIT_TICKS pdMS_TO_TICKS(1000)
 #define STACK_SIZE 4096
 
 typedef struct {
