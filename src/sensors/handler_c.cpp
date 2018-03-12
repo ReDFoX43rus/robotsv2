@@ -16,12 +16,8 @@ static bool crash_notifier = 0;
 static inline void crash_sensor_callback(void*);
 
 extern "C" int handle_sensor(int sensor_id, const int *data){
-	uart << "sensor_id: " << sensor_id << endl;
-
-	uart << "data: " << *data << endl;
-
 	if(sensor_id >= MAX_SENSORS)
-		return -1;
+		return -0x20;
 
 	static CColorSensor color_sensor;
 	static CHMC5883L compass;
@@ -93,7 +89,7 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 		}
 
 		default:
-			return -1;
+			return -0x30;
 	}
 
 	return 0;

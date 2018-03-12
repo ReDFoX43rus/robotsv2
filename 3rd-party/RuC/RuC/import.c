@@ -523,25 +523,28 @@ void interpreter(void* pcPnt)
 
 				break;
 
-			case GETDIGSENSORC:
+			case GETANSENSORC:
 				pin = mem[x--];
-				sensortype = -mem[x]; // 0 indicate to handle_sensor that it's digital sensor
+				sensortype = mem[x];
 
 				mem[x] = handle_sensor(sensortype, &pin);
-				if(mem[x] == -1)
+				if(mem[x] == -0x30)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
 				break;
 
-			case GETANSENSORC:
+			case GETDIGSENSORC:
 				array_ptr = mem[x--];
 				sensortype = mem[x];
+
+				if(sensortype == 7 || sensortype == 8)
+					sensortype *= -1;
 
 				array_size = mem[array_ptr - 1];
 				if(array_size >= max_array_size)
 					runtimeerr(robotsv2_too_long_array, 0, 0);
 
 				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
-				if(mem[x] == -1)
+				if(mem[x] == -0x30)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
 				break;
 
