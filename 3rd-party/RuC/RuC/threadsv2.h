@@ -5,10 +5,6 @@
 #define MAX_SEMS 16
 #define MAX_MESSAGES_PER_THREAD 32
 
-#ifndef configUSE_TASK_NOTIFICATIONS
-#define configUSE_TASK_NOTIFICATIONS 1
-#endif
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

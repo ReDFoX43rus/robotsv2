@@ -460,6 +460,7 @@ void interpreter(void* pcPnt)
 
 			case EXITDIRECTC:
 			case EXITC:
+				/* TODO: fix this */
 				t_exit(-1);
 				break;
 

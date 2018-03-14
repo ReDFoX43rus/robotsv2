@@ -137,6 +137,10 @@ int t_exit(int num){
 	if(num <= 0 || num >= MAX_THREADS)
 		return -2;
 
+	/* we have to call this function only from main thread*/
+	if(t_getThNum() != 0)
+		return -4;
+
 	TAKE_OR_DIE();
 
 	if(threads[num].status != OBJ_INITED){
