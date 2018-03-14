@@ -46,7 +46,7 @@ int t_destroy(void);
 
 int t_create_inner(TaskFunction_t func, void* arg);
 int t_getThNum(void);
-int t_exit(void);
+int t_exit(int num);
 
 int t_sem_create(int level);
 int t_sem_destroy(int sem);
