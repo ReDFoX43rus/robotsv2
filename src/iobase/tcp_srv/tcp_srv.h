@@ -13,7 +13,7 @@
 
 class CTcp : public CIOBase{
 public:
-	CTcp(uint16_t port, uint32_t heartbeatDelay = 10);
+	CTcp(uint16_t port, uint32_t heartbeatDelay);
 	~CTcp();
 
 	/* Make tcp server listen on port */

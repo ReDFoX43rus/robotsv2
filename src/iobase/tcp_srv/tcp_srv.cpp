@@ -19,7 +19,9 @@ CTcp::CTcp(uint16_t port, uint32_t heartbeatDelay){
 	m_HeartbeatDelay = heartbeatDelay;
 	m_LastHeartbeat = 0;
 	m_CheckHeartbeatTask = 0;
+	m_HeartbeatSem = 0;
 
+	uart << "heartbeatDelay: " << heartbeatDelay << endl;
 	if(heartbeatDelay){
 		m_HeartbeatSem = xSemaphoreCreateMutex();
 		xTaskCreate(CheckHeartbeat, "tcp_check_heartbeat", 2048, this, 1, &m_CheckHeartbeatTask);
@@ -133,7 +135,7 @@ void CTcp::HandleClient(void *arg){
 				break;
 			}
 
-			if(tcp->m_HeartbeatDelay && xSemaphoreTake(tcp->m_HeartbeatSem, TCPIO_SEM_WAIT_TIME) == pdTRUE){
+			if(tcp->m_HeartbeatDelay && tcp->m_HeartbeatSem && xSemaphoreTake(tcp->m_HeartbeatSem, TCPIO_SEM_WAIT_TIME) == pdTRUE){
 				tcp->m_LastHeartbeat = clock() / CLOCKS_PER_SEC;
 				xSemaphoreGive(tcp->m_HeartbeatSem);
 			}
@@ -164,9 +166,11 @@ int CTcp::DropClient(){
 	close(m_ConnectSocket);
 	Flush();
 
-	xSemaphoreTake(m_HeartbeatSem, TCPIO_SEM_WAIT_TIME);
-	m_LastHeartbeat = 0;
-	xSemaphoreGive(m_HeartbeatSem);
+	if(m_HeartbeatSem){
+		xSemaphoreTake(m_HeartbeatSem, TCPIO_SEM_WAIT_TIME);
+		m_LastHeartbeat = 0;
+		xSemaphoreGive(m_HeartbeatSem);
+	}
 
 	return 0;
 }
