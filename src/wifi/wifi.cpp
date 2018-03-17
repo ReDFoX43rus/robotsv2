@@ -57,6 +57,7 @@ esp_err_t CWifi::event_handler(void *ctx, system_event_t *event)
 
 CWifi::CWifi(){
 	m_ScanRecords = NULL;
+	m_FlashAndAdapterInited = false;
 }
 
 CWifi::~CWifi(){
@@ -67,7 +68,7 @@ CWifi::~CWifi(){
 		delete[] m_ScanRecords;
 }
 
-int CWifi::Init(){
+int CWifi::FlashAndAdapterInit(){
 	esp_err_t err = nvs_flash_init();
 	if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
 		ESP_ERROR_CHECK(nvs_flash_erase());
@@ -86,13 +87,33 @@ int CWifi::Init(){
 	if(esp_wifi_init(&cfg) != ESP_OK)
 		return -3;
 
+	return 0;
+}
+
+int CWifi::Init(wifi_mode_t mode){
+	int res = FlashAndAdapterInit();
+	if(res && !m_FlashAndAdapterInited){
+		/* We failed on first time init */
+		return res;
+	} else {
+		/* Seems like this function was called more than 1 time
+		 * So we just ignore error since nvs flash and tcp adapter already inited */
+	}
+
+	m_FlashAndAdapterInited = true;
+
 	wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
 	wifi_config.sta.channel = 0;
+	strncpy((char*)wifi_config.ap.ssid, "espRobots", strlen("espRobots") + 1);
+	memset(wifi_config.ap.password, 0, 64);
+	wifi_config.ap.ssid_len = 0;
+	wifi_config.ap.max_connection = 4;
+	wifi_config.ap.authmode = WIFI_AUTH_OPEN;
 
-	if(esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK)
+	if(esp_wifi_set_mode(mode) != ESP_OK)
 		return -4;
 
-	if(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) != ESP_OK)
+	if(esp_wifi_set_config(mode == WIFI_MODE_STA ? ESP_IF_WIFI_STA : ESP_IF_WIFI_AP, &wifi_config) != ESP_OK)
 		return -6;
 
 	if(esp_wifi_start() != ESP_OK)
