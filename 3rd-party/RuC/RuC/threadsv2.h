@@ -5,15 +5,11 @@
 #define MAX_SEMS 16
 #define MAX_MESSAGES_PER_THREAD 32
 
-#ifndef configUSE_TASK_NOTIFICATIONS
-#define configUSE_TASK_NOTIFICATIONS 1
-#endif
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#define DEFAULT_WAIT_TICKS pdMS_TO_TICKS(100)
+#define DEFAULT_WAIT_TICKS pdMS_TO_TICKS(1000)
 #define STACK_SIZE 4096
 
 typedef struct {
@@ -44,12 +40,12 @@ typedef struct {
 int t_init(void);
 int t_destroy(void);
 
-int t_create_inner(TaskFunction_t func, void* arg);
+int t_create_inner(void *(*func)(void*), void* arg);
 int t_getThNum(void);
-int t_prepare_exit(void);
-int t_exit(void);
+int t_exit(int num);
 
 int t_sem_create(int level);
+int t_sem_destroy(int sem);
 int t_sem_wait(int numSem);
 int t_sem_post(int numSem);
 
