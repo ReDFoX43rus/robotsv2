@@ -15,13 +15,13 @@ static SemaphoreHandle_t sem_sem;
 #define SGIVE_OR_DIE() if(xSemaphoreGive(sem_sem) != pdTRUE) return -10
 
 typedef struct {
-	TaskFunction_t func;
+	void *(*func)(void*);
 	void *arg;
 } looper_arg_t;
 
 static void looper(void *arg){
 	void *data = ((looper_arg_t*)arg)->arg;
-	TaskFunction_t func = ((looper_arg_t*)arg)->func;
+	void *(*func)(void*) = ((looper_arg_t*)arg)->func;
 
 	free(arg);
 
@@ -71,8 +71,10 @@ int t_destroy(void){
 	/* Start from 1, don't remove main task */
 	for(int i = 1; i < MAX_THREADS; i++){
 		if(threads[i].status == OBJ_INITED){
-			vSemaphoreDelete(threads[i].msg_sem);
+			printf("i: %d, handle: 0x%X, sem: 0x%X\n", i, (uint32_t)threads[i].handle, (uint32_t)threads[i].msg_sem);
 			vTaskDelete(threads[i].handle);
+			vSemaphoreDelete(threads[i].msg_sem);
+			threads[i].status = OBJ_FREE;
 		}
 	}
 	GIVE_OR_DIE();
@@ -92,7 +94,7 @@ int t_destroy(void){
 
 	return 0;
 }
-int t_create_inner(TaskFunction_t func, void* arg){
+int t_create_inner(void *(*func)(void*), void* arg){
 	TAKE_OR_DIE();
 
 	int new_thread_id = get_free_th_num();
@@ -330,7 +332,7 @@ thmsg_t t_msg_receive(void){
 
 static int ruc_sem = -1;
 
-void ruc_test_worker(void *arg){
+void* ruc_test_worker(void *arg){
 	t_sem_wait(ruc_sem);
 	printf("Hello from thread %d\n", (int)arg);
 	t_sem_post(ruc_sem);
@@ -343,13 +345,14 @@ void ruc_test_worker(void *arg){
 	int res = t_msg_send(msg);
 	printf("#%d: t_msg_send: %d\n", (int)arg, res);
 
-	// vTaskDelay(pdMS_TO_TICKS(500));
+	return NULL;
 }
 
-void ruc_test_msg_reveice(void *arg){
+void* ruc_test_msg_reveice(void *arg){
 	thmsg_t msg;
 	msg = t_msg_receive();
 	printf("From: %d, data: %d\n", msg.thread_n, msg.data);
+	return NULL;
 }
 
 void test_ruc_threadsv2(void){
@@ -377,4 +380,20 @@ void test_ruc_threadsv2(void){
 	t_sem_destroy(ruc_sem);
 	t_destroy();
 	printf("OK\n");
+}
+
+#include "unistd.h"
+
+static void *hello(void*arg){
+	printf("Hello from thread\n");
+	sleep(1);
+	return NULL;
+}
+
+void test_ruc_hello(void){
+	t_init();
+	t_create_inner(hello, NULL);
+	sleep(5);
+	printf("Calling t_destroy\n");
+	t_destroy();
 }
