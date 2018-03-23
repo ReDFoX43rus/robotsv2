@@ -1,7 +1,7 @@
 #include "iobase/iobase.h"
 #include "iobase/tcp_srv/tcp_factory.h"
 
-static uint16_t port = 80;
+static uint16_t port = 3000;
 
 void CmdTcpHandler(CIOBase &io, int argc, char *argv[]){
 	if(argc < 2){
