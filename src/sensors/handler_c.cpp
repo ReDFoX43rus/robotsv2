@@ -100,11 +100,22 @@ inline void crash_sensor_callback(void*){
 }
 
 extern "C" void set_voltage(int pin, int level){
-	uart << "pin: " << pin << " level: " << level << endl;
-
 	gpio_num_t gpio = (gpio_num_t)pin;
 
 	gpio_pad_select_gpio(gpio);
 	gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
 	gpio_set_level(gpio, level);
+}
+
+/* according to TRIK's pin-map
+ * we have to change sign on analog pins
+ * and remove 1
+ * (wantch https://github.com/Victor-Y-Fadeev/qreal/blob/iotik-v1-0/plugins/robots/generators/iotik/iotikRuCGeneratorLibrary/src/iotikRuCGeneratorPluginBase.cpp )*/
+extern "C" void handle_pins(int *pins, int size){
+	for(int i = 0; i < size; i++){
+		if(pins[i] < 0){
+			pins[i]++;
+			pins[i] *= 1;
+		}
+	}
 }
