@@ -17,7 +17,7 @@ public:
 	/* Init wifi
 	 * mode WIFI_MODE_STA for sta mode
 	 * mode WIFI_MODE_AP for soft-ap mode */
-	int Init(wifi_mode_t mode);
+	int Init(wifi_mode_t mode, const char *ssid = NULL, const char *password = NULL);
 
 	/* Start searching new APs */
 	int Search(uint8_t channel);

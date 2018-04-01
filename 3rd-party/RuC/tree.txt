@@ -1,0 +1,51 @@
+
+source
+line 1) int ruc_sem = -1;
+line 2) 
+line 3) void* ruc_test_worker(void *arg){
+
+
+identab
+id 2) 1
+id 3) 2438
+id 4) -1
+id 5) -3
+
+id 6) 1
+id 7) 2448
+id 8) 15
+id 9) 2
+
+id 10) 1
+id 11) 2466
+id 12) -150
+id 13) 3
+
+
+modetab
+md 0) 0
+md 1) 0
+md 2) 1002
+md 3) 2
+md 4) 4
+md 5) -1
+md 6) 2423
+md 7) -1
+md 8) 2431
+md 9) 1
+md 10) 1001
+md 11) -6
+md 12) 1
+md 13) 2
+md 14) 9
+md 15) 1001
+md 16) -150
+md 17) 1
+md 18) -150
+
+tc 0) TDeclid displ= -3 eltype= -1 N= 0 all= 1 iniproc= 0, usual= 1 instuct= 0
+tc 8) TConst 1
+tc 10) TOper 9049
+tc 11) TExprend
+tc 12) TFuncdef funcn= 6 maxdispl= 0
+tc 15) TBegin

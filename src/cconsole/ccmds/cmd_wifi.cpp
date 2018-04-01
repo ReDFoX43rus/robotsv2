@@ -13,7 +13,7 @@ void CmdWifiHandler(CIOBase &io, int argc, char **argv){
 		io << "wifi init: " << wifi.Init(WIFI_MODE_STA) << endl;
 	}
 	else if(!strcmp(argv[1], "init_ap")){
-		io << "wifi init: " << wifi.Init(WIFI_MODE_AP) << endl;
+		io << "wifi init: " << wifi.Init(WIFI_MODE_AP, argv[2], argv[3]) << endl;
 	}
 	else if(!strcmp(argv[1], "scan")){
 		int res;
