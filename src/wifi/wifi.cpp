@@ -90,7 +90,10 @@ int CWifi::FlashAndAdapterInit(){
 	return 0;
 }
 
-int CWifi::Init(wifi_mode_t mode){
+int CWifi::Init(wifi_mode_t mode, const char *ssid, const char *password){
+	if(mode != WIFI_MODE_STA && !ssid)
+		return -7;
+    
 	int res = FlashAndAdapterInit();
 	if(res && !m_FlashAndAdapterInited){
 		/* We failed on first time init */
@@ -102,14 +105,24 @@ int CWifi::Init(wifi_mode_t mode){
 
 	m_FlashAndAdapterInited = true;
 
-	wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
-	wifi_config.sta.channel = 0;
-	strncpy((char*)wifi_config.ap.ssid, "espRobots", strlen("espRobots") + 1);
-	memset(wifi_config.ap.password, 0, 64);
-	wifi_config.ap.ssid_len = 0;
-	wifi_config.ap.max_connection = 4;
-	wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-
+	if(mode == WIFI_MODE_STA){
+		wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+		wifi_config.sta.channel = 0;
+	} else {
+		strncpy((char*)wifi_config.ap.ssid, ssid, strlen(ssid));
+		if(password){
+			int len = strlen(password);
+			strncpy((char*)wifi_config.ap.password, password, len);
+			strncpy((char*)wifi_config.ap.password + len, "\0", 1);
+		}
+		else
+			memset((void*)wifi_config.ap.password, 0, 64);
+		wifi_config.ap.ssid_len = strlen(ssid);
+		wifi_config.ap.max_connection = 4;
+		wifi_config.ap.authmode = password ? WIFI_AUTH_WPA2_PSK : WIFI_AUTH_OPEN;
+		wifi_config.ap.beacon_interval = 400;
+	}
+  
 	if(esp_wifi_set_mode(mode) != ESP_OK)
 		return -4;
 
