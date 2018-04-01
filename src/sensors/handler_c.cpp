@@ -30,15 +30,15 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 			return line_analog.GetData(data[0]);
 		}
 		case SENSOR_COLOR_RED: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::RED);
 		}
 		case SENSOR_COLOR_GREEN: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::GREEN);
 		}
 		case SENSOR_COLOR_BLUE: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::RED);
 		}
 		case SENSOR_COMPASS_X:

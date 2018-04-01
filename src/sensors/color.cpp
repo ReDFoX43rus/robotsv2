@@ -9,7 +9,7 @@ CColorSensor::~CColorSensor(){
 }
 
 void CColorSensor::Setup(gpio_num_t s0, gpio_num_t s1, gpio_num_t s2,
-			gpio_num_t s3, adc1_channel_t out){
+			gpio_num_t s3, gpio_num_t out){
 
 	if(m_S0 == s0 && m_S1 == s1 && m_S2 == s2 && m_S3 == s3 && m_Out == out)
 		return;
@@ -30,8 +30,13 @@ void CColorSensor::Setup(gpio_num_t s0, gpio_num_t s1, gpio_num_t s2,
 	gpio_set_direction(s2, GPIO_MODE_OUTPUT);
 	gpio_set_direction(s3, GPIO_MODE_OUTPUT);
 
-	m_Adc->SetupAdc((int)out, 1100);
+	gpio_set_level(s0, 1);
+	gpio_set_level(s1, 1);
+	// m_Adc->SetupAdc((int)out, 1100);
 }
+
+extern void freq_counter_pcnt_init(uint32_t gpio_num);
+extern uint32_t freq_measure();
 
 uint8_t CColorSensor::GetColor(Color color){
 	switch(color){
@@ -53,7 +58,9 @@ uint8_t CColorSensor::GetColor(Color color){
 			break;
 	}
 
-	uint32_t v = m_Adc->GetVoltage((int)m_Out);
+	//uint32_t v = m_Adc->GetVoltage((int)m_Out);
+	freq_counter_pcnt_init(m_Out);
+	return freq_measure();
 
-	return (v*255)/1100;
+	//return (v*255)/1100;
 }
