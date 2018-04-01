@@ -9,7 +9,7 @@ public:
 	CColorSensor();
 	~CColorSensor();
 
-	void Setup(gpio_num_t s0, gpio_num_t s1, gpio_num_t s2, gpio_num_t s3, adc1_channel_t out);
+	void Setup(gpio_num_t s0, gpio_num_t s1, gpio_num_t s2, gpio_num_t s3, gpio_num_t out);
 
 	enum Color{
 		RED,
@@ -24,7 +24,7 @@ private:
 	gpio_num_t m_S1;
 	gpio_num_t m_S2;
 	gpio_num_t m_S3;
-	adc1_channel_t m_Out;
+	gpio_num_t m_Out;
 
 	CAdc *m_Adc;
 };

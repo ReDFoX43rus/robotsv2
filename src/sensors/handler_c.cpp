@@ -30,15 +30,15 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 			return line_analog.GetData(data[0]);
 		}
 		case SENSOR_COLOR_RED: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::RED);
 		}
 		case SENSOR_COLOR_GREEN: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::GREEN);
 		}
 		case SENSOR_COLOR_BLUE: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::RED);
 		}
 		case SENSOR_COMPASS_X:
@@ -100,11 +100,22 @@ inline void crash_sensor_callback(void*){
 }
 
 extern "C" void set_voltage(int pin, int level){
-	uart << "pin: " << pin << " level: " << level << endl;
-
 	gpio_num_t gpio = (gpio_num_t)pin;
 
 	gpio_pad_select_gpio(gpio);
 	gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
 	gpio_set_level(gpio, level);
+}
+
+/* according to TRIK's pin-map
+ * we have to change sign on analog pins
+ * and remove 1
+ * (wantch https://github.com/Victor-Y-Fadeev/qreal/blob/iotik-v1-0/plugins/robots/generators/iotik/iotikRuCGeneratorLibrary/src/iotikRuCGeneratorPluginBase.cpp )*/
+extern "C" void handle_pins(int *pins, int size){
+	for(int i = 0; i < size; i++){
+		if(pins[i] < 0){
+			pins[i]++;
+			pins[i] *= 1;
+		}
+	}
 }
