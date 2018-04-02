@@ -93,7 +93,7 @@ int CWifi::FlashAndAdapterInit(){
 int CWifi::Init(wifi_mode_t mode, const char *ssid, const char *password){
 	if(mode != WIFI_MODE_STA && !ssid)
 		return -7;
-    
+
 	int res = FlashAndAdapterInit();
 	if(res && !m_FlashAndAdapterInited){
 		/* We failed on first time init */
@@ -122,7 +122,7 @@ int CWifi::Init(wifi_mode_t mode, const char *ssid, const char *password){
 		wifi_config.ap.authmode = password ? WIFI_AUTH_WPA2_PSK : WIFI_AUTH_OPEN;
 		wifi_config.ap.beacon_interval = 400;
 	}
-  
+
 	if(esp_wifi_set_mode(mode) != ESP_OK)
 		return -4;
 
@@ -177,8 +177,6 @@ void CWifi::ListScanRecords(){
 }
 
 int CWifi::Connect(char *ssid, char *pwd){
-	uart << "ssid: " << ssid << " pwd: " << pwd << endl;
-
 	memcpy(wifi_config.sta.ssid, ssid, strlen(ssid));
 	memcpy(wifi_config.sta.password, pwd, strlen(pwd));
 

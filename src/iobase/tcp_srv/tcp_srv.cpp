@@ -21,7 +21,6 @@ CTcp::CTcp(uint16_t port, uint32_t heartbeatDelay){
 	m_CheckHeartbeatTask = 0;
 	m_HeartbeatSem = 0;
 
-	uart << "heartbeatDelay: " << heartbeatDelay << endl;
 	if(heartbeatDelay){
 		m_HeartbeatSem = xSemaphoreCreateMutex();
 		xTaskCreate(CheckHeartbeat, "tcp_check_heartbeat", 2048, this, 1, &m_CheckHeartbeatTask);
@@ -97,7 +96,7 @@ void CTcp::HandleClient(void *arg){
 		}
 
 		/*connection established，now can send/recv*/
-		uart << "Client accepted" << endl;
+		uart << "TCP: Client accepted" << endl;
 
 		char buff[TCPIO_RECV_BUFF_SIZE];
 		int len, to_write;
@@ -125,6 +124,10 @@ void CTcp::HandleClient(void *arg){
 
 				memcpy(tcp->m_IOQueue + tcp->m_QueueFront, buff, to_write);
 				tcp->m_QueueFront += to_write;
+
+				uart << "TCP: Received " << to_write << " bytes: ";
+				uart.Write(buff, to_write);
+				uart << endl;
 
 				currentBuffSize = tcp->m_QueueFront - tcp->m_QueueBack;
 

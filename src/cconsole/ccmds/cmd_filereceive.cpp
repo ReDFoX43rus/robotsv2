@@ -13,16 +13,20 @@ void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 	char *filename = argv[1];
 	char *size = argv[2];
 
-	//uart << "Filename: " << filename << " size: " << size << endl;
+	CFile debug = CFile("/fat/fr_debug", FM_WRITE);
+	debug << "Filename: " << filename << " Size: " << size << endl;
 
 	char *pEnd;
 	size_t fileSize = strtol(size, &pEnd, 10);
 
-	//uart << "Converted size: " << size << endl;
+	debug << "Converted size: " << size << endl;
 
 	CFile file = CFile(filename, FM_WRITE);
 	if(!file.IsOpened()){
 		io << "Error: cannot open file" << endl;
+
+		debug << "Error opening file" << endl;
+		debug.Close();
 		return;
 	}
 
@@ -33,6 +37,10 @@ void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 	else buffer = (char*)malloc(RECEIVE_BUFF_SIZE);
 
 	io << (int)isSwap << endl;
+	debug << "Swap: " << (isSwap ? "yes" : "no");
+	if(isSwap)
+		debug << ", Allocated size: " << fileSize;
+	debug << endl;
 
 	size_t receivedBytes = 0;
 	int ioBufDSize, currentDiff;
@@ -41,6 +49,9 @@ void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 		if(ioBufDSize < 0){
 			io << "Error receiving file :C" << endl;
 			file.Close();
+
+			debug << "Error: Negative buffered data length" << endl;
+			debug.Close();
 			return;
 		}
 
@@ -58,6 +69,7 @@ void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 			receivedBytes += currentDiff;
 		}
 
+		debug << "Received bytes: " << receivedBytes << " Total: " << fileSize << endl;
 	}
 
 	if(isSwap)
@@ -67,4 +79,7 @@ void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 
 	free(buffer);
 	io << "Done!" << endl;
+
+	debug << "Done!" << endl;
+	debug.Close();
 }
