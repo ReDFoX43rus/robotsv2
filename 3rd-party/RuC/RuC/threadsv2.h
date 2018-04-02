@@ -52,4 +52,6 @@ int t_sem_post(int numSem);
 int t_msg_send(thmsg_t msg);
 thmsg_t t_msg_receive(void);
 
+void t_sleep(uint32_t ms);
+
 #endif /* end of include guard: RUC_THREADSV2_H */

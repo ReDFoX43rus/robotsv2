@@ -445,7 +445,7 @@ void *interpreter(void* pcPnt)
 				break;
 
 			case SLEEPC:
-				sleep(mem[x--]);
+				t_sleep(mem[x--]);
 				break;
 
 			case EXITDIRECTC:
@@ -516,6 +516,7 @@ void *interpreter(void* pcPnt)
 				sensortype = mem[x];
 
 				handle_pins(&pin, 1);
+
 				mem[x] = handle_sensor(sensortype, &pin);
 				if(mem[x] == -0x30)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);

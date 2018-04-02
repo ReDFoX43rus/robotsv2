@@ -326,3 +326,7 @@ thmsg_t t_msg_receive(void){
 
 	return retval;
 }
+
+void t_sleep(uint32_t ms){
+	vTaskDelay(pdMS_TO_TICKS(ms));
+}

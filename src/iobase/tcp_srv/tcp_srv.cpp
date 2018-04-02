@@ -97,7 +97,7 @@ void CTcp::HandleClient(void *arg){
 		}
 
 		/*connection established，now can send/recv*/
-		// uart << "Client accepted" << endl;
+		uart << "Client accepted" << endl;
 
 		char buff[TCPIO_RECV_BUFF_SIZE];
 		int len, to_write;
