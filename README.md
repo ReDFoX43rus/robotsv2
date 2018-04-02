@@ -1,3 +1,7 @@
+# There is flash encryption enabled for esp32 on this branch
+# Check the [docs](http://esp-idf.readthedocs.io/en/latest/security/flash-encryption.html) before flashing this code
+
+
 # ESP32 Robots (& IoT) Framework
 
 This framework is on develop state right now
