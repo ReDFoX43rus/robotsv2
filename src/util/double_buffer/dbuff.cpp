@@ -28,6 +28,7 @@ void dbuff_destroy(dbuff_t *dbuff){
 }
 
 int dbuff_put(const char *data, int size, dbuff_t *dbuff){
-	
+
 }
+
 int dbuff_read(char *dest, int size, dbuff_t *dbuff);
