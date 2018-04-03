@@ -46,6 +46,9 @@ void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 			return;
 		}
 
+		if(!ioBufDSize)
+			continue;
+
 		if(isSwap){
 			// this variable used to control overflow
 			currentDiff = receivedBytes + ioBufDSize;

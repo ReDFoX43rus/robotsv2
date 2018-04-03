@@ -24,8 +24,8 @@ typedef struct {
 int dbuff_init(int buff_size, dbuff_t *dbuff);
 void dbuff_destroy(dbuff_t *dbuff);
 
-int dbuff_put(const char *data, int size, dbuff_t *dbuff);
-int dbuff_read(char *dest, int size, dbuff_t *dbuff);
+int dbuff_put(const char *data, size_t size, dbuff_t *dbuff);
+int dbuff_read(char *dest, size_t size, dbuff_t *dbuff);
 
 uint32_t dbuff_get_buffered_data_length(dbuff_t *dbuff);
 int dbuff_clear_buffer(dbuff_t *dbuff);

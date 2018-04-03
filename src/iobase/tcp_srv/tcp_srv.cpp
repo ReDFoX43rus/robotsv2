@@ -95,8 +95,7 @@ void CTcp::HandleClient(void *arg){
 		}
 
 		char buff[TCPIO_RECV_BUFF_SIZE];
-		int len, total = 0;
-
+		
 		while((len = recv(tcp->m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
 			total += len;
 
@@ -108,8 +107,6 @@ void CTcp::HandleClient(void *arg){
 				xSemaphoreGive(tcp->m_HeartbeatSem);
 			}
 		}
-
-		uart << "Total bytes received: " << total << endl;
 	}
 }
 

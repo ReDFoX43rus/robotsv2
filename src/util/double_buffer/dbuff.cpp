@@ -38,7 +38,7 @@ void dbuff_destroy(dbuff_t *dbuff){
 	vSemaphoreDelete(dbuff->buff2_sem);
 }
 
-int dbuff_put(const char *data, int size, dbuff_t *dbuff){
+int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 	int can_write = size;
 	int cuz_of_readptr = 0;
 
@@ -99,7 +99,7 @@ int dbuff_put(const char *data, int size, dbuff_t *dbuff){
 	return can_write;
 }
 
-int dbuff_read(char *dest, int size, dbuff_t *dbuff){
+int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 	int can_read = size;
 	int limit = 0;
 
@@ -117,6 +117,8 @@ int dbuff_read(char *dest, int size, dbuff_t *dbuff){
 		}
 
 		limit = dbuff->write_ptr - dbuff->read_ptr;
+		if(limit < 0)
+			limit = 0;
 		if(limit < can_read)
 			can_read = limit;
 	}
@@ -125,13 +127,13 @@ int dbuff_read(char *dest, int size, dbuff_t *dbuff){
 	if(limit < can_read)
 		can_read = limit;
 
-	uart << "Can read " << can_read << " of " << size << " bytes" << endl;
+	// uart << "Can read " << can_read << " of " << size << " bytes" << endl;
 
 	char *src = dbuff->read_buff ? dbuff->buff2 : dbuff->buff1;
 	memcpy((void*)dest, (void*)(src + read_ptr), can_read);
 
 	dbuff->read_ptr += can_read;
-	uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
+	// uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
 
 	if(dbuff->read_ptr == dbuff->buff_size){
 		dbuff->read_ptr = 0;

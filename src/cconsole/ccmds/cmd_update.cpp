@@ -38,7 +38,7 @@ void CmdUpdateHandler(CIOBase &io, int argc, char *argv[]){
 
 	while(current < ota_size){
 		buffSize = io.GetBufferedDataLength();
-		if(!buffSize)
+		if(buffSize <= 0)
 			continue;
 
 		if(buffSize > UPDATE_BUFF_SIZE)
