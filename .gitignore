@@ -3,3 +3,4 @@ sdkconfig.old
 export.txt
 disasm
 flash_encryption_key.bin
+startup.sc
