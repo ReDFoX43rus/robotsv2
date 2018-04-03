@@ -12,6 +12,8 @@
 #include "line_dig.h"
 #include "sharp_2y0a21.h"
 
+#include "uart.h"
+
 static bool crash_notifier = 0;
 static inline void crash_sensor_callback(void*);
 
@@ -76,7 +78,10 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 		case SENSOR_HCSR04: {
 			static HCSR04 distance_sensor;
 			distance_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1]);
-			return distance_sensor.GetDistance();
+			int distance = distance_sensor.GetDistance();
+
+			/* filtering garbage (maybe its only my sensor is broken) */
+			return distance < 1e6 ? distance : -1;
 		}
 		case SENSOR_LINE_DIG: {
 			static CLineDig line_digital;

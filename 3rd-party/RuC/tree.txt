@@ -1,5 +1,6 @@
 
 source
+<<<<<<< HEAD
 line 1) int ruc_sem = -1;
 line 2) 
 line 3) void* ruc_test_worker(void *arg){
@@ -20,6 +21,39 @@ id 10) 1
 id 11) 2466
 id 12) -150
 id 13) 3
+=======
+line 1) int main(){
+line 2) 	int distance;
+line 3) 
+line 4) 	while(1){
+line 5) 
+line 6) 		distance = getdigsensor(12, {4, 5});
+line 7) 		printf("distance: %i\n", distance);
+line 8) 
+line 9) 		if(distance < 8){
+line 10) 			setvoltage(0, 1);
+line 11) 		} else {
+line 12) 			setvoltage(0, 0);
+line 13) 		}
+line 14) 
+line 15) 		t_sleep(100);
+line 16) 	}
+line 17) 
+line 18) 	return 0;
+line 19) }
+line 20) 
+
+identab
+id 2) 0
+id 3) 8
+id 4) 20
+id 5) 2
+
+id 6) 1
+id 7) 2438
+id 8) -1
+id 9) 3
+>>>>>>> master
 
 
 modetab
@@ -42,6 +76,7 @@ md 15) 1001
 md 16) -150
 md 17) 1
 md 18) -150
+<<<<<<< HEAD
 
 tc 0) TDeclid displ= -3 eltype= -1 N= 0 all= 1 iniproc= 0, usual= 1 instuct= 0
 tc 8) TConst 1
@@ -49,3 +84,72 @@ tc 10) TOper 9049
 tc 11) TExprend
 tc 12) TFuncdef funcn= 6 maxdispl= 0
 tc 15) TBegin
+=======
+md 19) 14
+md 20) 1001
+md 21) -1
+md 22) 0
+
+tc 0) TFuncdef funcn= 2 maxdispl= 5
+tc 3) TBegin
+tc 4) TDeclid displ= 3 eltype= -1 N= 0 all= 0 iniproc= 0, usual= 1 instuct= 0
+tc 12) TWhile 17
+tc 14) TConst 1
+tc 16) TExprend
+tc 17) TBegin
+tc 18) TIdent 3
+tc 20) TConst 12
+tc 22) TString
+tc 23) TOper 4
+tc 24) TOper 5
+tc 25) TOper 0
+tc 26) TOper 9531
+tc 27) TOper 9207
+tc 28) TOper 3
+tc 29) TExprend
+tc 30) TIdenttoval 3
+tc 32) TExprend
+tc 33) TString
+tc 34) TOper 100
+tc 35) TOper 105
+tc 36) TOper 115
+tc 37) TOper 116
+tc 38) TOper 97
+tc 39) TOper 110
+tc 40) TOper 99
+tc 41) TOper 101
+tc 42) TOper 58
+tc 43) TOper 32
+tc 44) TOper 37
+tc 45) TOper 105
+tc 46) TOper 10
+tc 47) TOper 0
+tc 48) TExprend
+tc 49) TPrintf 1
+tc 51) TIf 60 68
+tc 54) TIdenttoval 3
+tc 56) TConst 8
+tc 58) TOper 9033
+tc 59) TExprend
+tc 60) TBegin
+tc 61) TConst 0
+tc 63) TConst 1
+tc 65) TOper 9533
+tc 66) TExprend
+tc 67) TEnd
+tc 68) TBegin
+tc 69) TConst 0
+tc 71) TConst 0
+tc 73) TOper 9533
+tc 74) TExprend
+tc 75) TEnd
+tc 76) TConst 100
+tc 78) TSLEEP
+tc 79) TExprend
+tc 80) TEnd
+tc 81) TReturnval 1
+tc 83) TConst 0
+tc 85) TExprend
+tc 86) TReturn
+tc 87) TEnd
+>>>>>>> master
