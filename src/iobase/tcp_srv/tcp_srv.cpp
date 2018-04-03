@@ -95,10 +95,9 @@ void CTcp::HandleClient(void *arg){
 		}
 
 		char buff[TCPIO_RECV_BUFF_SIZE];
-		
-		while((len = recv(tcp->m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
-			total += len;
+		int len;
 
+		while((len = recv(tcp->m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
 			while(len > 0)
 				len -= dbuff_put(buff, len, &tcp->m_DBuff);
 
