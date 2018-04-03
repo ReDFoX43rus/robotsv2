@@ -33,5 +33,6 @@ void CmdCatHandler(CIOBase &io, int argc, char **argv){
 	}
 
 	file.Close();
+	io << "File size: " << size << endl;
 	io << endl;
 }

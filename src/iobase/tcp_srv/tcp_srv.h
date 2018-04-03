@@ -6,8 +6,9 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#define TCPIO_MAX_BUFF_SIZE (4096*2)
-/* TCPIO_RECV_BUFF_SIZE should be like 1/8 of TCPIO_MAX_BUFF_SIZE */
+#include "util/double_buffer/dbuff.h"
+
+#define TCPIO_MAX_BUFF_SIZE 4096
 #define TCPIO_RECV_BUFF_SIZE 512
 #define TCPIO_SEM_WAIT_TIME pdMS_TO_TICKS(100)
 
@@ -32,7 +33,7 @@ public:
 	int DropClient();
 
 	/* Clear m_IOQueue */
-	void Flush() {m_QueueBack = 0; m_QueueFront = 0;}
+	void ClearBuffer();
 
 	/* Create new console thread
 	 * so we can send console cmds via tcp server */
@@ -67,16 +68,8 @@ private:
 	/* If last received chunk was too late then disconnect client */
 	static void CheckHeartbeat(void *arg);
 
-	/* Enqueue data received from client
-	 * Dequeue data requested by console */
-	SemaphoreHandle_t m_BuffSem;
-	char m_IOQueue[TCPIO_MAX_BUFF_SIZE];
-	uint32_t m_QueueFront;
-	uint32_t m_QueueBack;
-
-	/* Shift queue pointers as left as possible
-	 * Must be called only when semaphore is taken */
-	void BalanceQueue();
+	/* double buffering for handling data transfer */
+	dbuff_t m_DBuff;
 
 	/* Task's descrptors and handlers */
 	TaskHandle_t m_ConsoleTask;

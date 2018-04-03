@@ -2,6 +2,8 @@
 #include "iobase/fileio/fileio.h"
 #include "util/util.h"
 
+#include "uart.h"
+
 #define RECEIVE_BUFF_SIZE 1024
 
 void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
