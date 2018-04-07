@@ -54,6 +54,9 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 	}
 
 	int diff = dbuff->buff_size - dbuff->write_ptr;
+	if(dbuff->read_ptr == 0)
+		diff--;
+
 	if(diff < can_write){
 		can_write = diff;
 		cuz_of_readptr = 0;
@@ -73,8 +76,8 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 	// uart.Write(data, can_write);
 	// uart << endl;
     //
-	// uart << "Write ptr: " << dbuff->write_ptr << " Buffer: " << dbuff->write_buff << endl;
-	// uart << "Written: " << can_write << endl;
+	uart << "Write ptr: " << dbuff->write_ptr << " Buffer: " << dbuff->write_buff << endl;
+	// uart << "Written: " << can_write << endl << endl;
 
 	if(cuz_of_readptr){
 		xSemaphoreGive(sem);
@@ -133,7 +136,7 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 	memcpy((void*)dest, (void*)(src + read_ptr), can_read);
 
 	dbuff->read_ptr += can_read;
-	// uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
+	uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
 
 	if(dbuff->read_ptr == dbuff->buff_size){
 		dbuff->read_ptr = 0;

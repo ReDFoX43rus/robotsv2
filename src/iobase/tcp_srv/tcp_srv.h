@@ -8,9 +8,11 @@
 
 #include "util/double_buffer/dbuff.h"
 
-#define TCPIO_MAX_BUFF_SIZE 4096
-#define TCPIO_RECV_BUFF_SIZE 512
+#define TCPIO_MAX_BUFF_SIZE 4096 // size of each buffer in double buffering system for recv
+#define TCPIO_RECV_BUFF_SIZE 512 // size of recv buffer
 #define TCPIO_SEM_WAIT_TIME pdMS_TO_TICKS(100)
+
+#define TCPIO_SEND_BUFF_SIZE 1024 // size of each buffer of double buffering system for send
 
 class CTcp : public CIOBase{
 public:
