@@ -9,7 +9,7 @@
 
 void freq_counter_pcnt_init(uint32_t gpio_num){
 	pcnt_config_t cfg = {
-		.pulse_gpio_num = 4,
+		.pulse_gpio_num = (int)gpio_num,
 		.ctrl_gpio_num = PCNT_PIN_NOT_USED,
 		.lctrl_mode = PCNT_MODE_KEEP,
 		.hctrl_mode = PCNT_MODE_KEEP,
@@ -38,19 +38,19 @@ uint32_t freq_measure(){
 	uint32_t stamp = clock();
 	pcnt_counter_resume(PCNT_UNIT_0);
 
-	vTaskDelay(pdMS_TO_TICKS(100));
+	vTaskDelay(pdMS_TO_TICKS(10));
 
 	pcnt_get_counter_value(PCNT_UNIT_0, &value);
 	uint32_t stamp2 = clock();
 	pcnt_counter_pause(PCNT_UNIT_0);
 	pcnt_counter_clear(PCNT_UNIT_0);
 
-	uart << "Stamp1: " << stamp << " Stamp2: " << stamp2 << endl;
+	// uart << "Stamp1: " << stamp << " Stamp2: " << stamp2 << endl;
 
 	uint32_t result = (stamp2 - stamp)*1000/CLOCKS_PER_SEC;
 	if(!result)
 		return 0;
 
-	uart << "Edges: " << value << " Time: " << result << " freq: " << (value/result) << endl;
+	// uart << "Edges: " << value << " Time: " << result << " freq: " << (value/result) << endl;
 	return value/result;
 }
