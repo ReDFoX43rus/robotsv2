@@ -95,13 +95,12 @@ void CTcp::HandleClient(void *arg){
 		}
 
 		char buff[TCPIO_RECV_BUFF_SIZE];
-		int len, stored = 0, total = 0;
+		int len, stored = 0;
 
 		while((len = recv(tcp->m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
 			while(stored < len){
 				stored += dbuff_put(buff + stored, len - stored, &tcp->m_DBuff);
 			}
-			total += stored;
 			stored = 0;
 
 			if(tcp->m_HeartbeatDelay && tcp->m_HeartbeatSem && xSemaphoreTake(tcp->m_HeartbeatSem, TCPIO_SEM_WAIT_TIME) == pdTRUE){
@@ -109,8 +108,6 @@ void CTcp::HandleClient(void *arg){
 				xSemaphoreGive(tcp->m_HeartbeatSem);
 			}
 		}
-
-		uart << "Total: " << total << endl;
 	}
 }
 

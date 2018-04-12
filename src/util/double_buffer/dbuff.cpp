@@ -81,7 +81,7 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 	// uart.Write(data, can_write);
 	// uart << endl;
     //
-	uart << "Write ptr: " << dbuff->write_ptr << " Buffer: " << dbuff->write_buff << endl;
+	// uart << "Write ptr: " << dbuff->write_ptr << " Buffer: " << dbuff->write_buff << endl;
 	//uart << "Written: " << can_write << endl;
 
 	if(cuz_of_readptr){
@@ -126,8 +126,8 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 
 		limit = write_ptr - read_ptr;
 		if(limit < 0)
-			uart << "Limit < 0 oO" << endl;
-			//limit = 0;
+			// uart << "Limit < 0 oO" << endl;
+			limit = 0;
 		if(limit < can_read)
 			can_read = limit;
 	}
@@ -142,7 +142,7 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 	memcpy((void*)dest, (void*)(src + read_ptr), can_read);
 
 	dbuff->read_ptr += can_read;
-	uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
+	// uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
 
 	if(can_read)
 		dbuff->read_started = 1;
