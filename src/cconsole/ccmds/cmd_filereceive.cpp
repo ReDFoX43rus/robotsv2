@@ -13,12 +13,8 @@ void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 	char *filename = argv[1];
 	char *size = argv[2];
 
-	//uart << "Filename: " << filename << " size: " << size << endl;
-
 	char *pEnd;
 	size_t fileSize = strtol(size, &pEnd, 10);
-
-	//uart << "Converted size: " << size << endl;
 
 	CFile file = CFile(filename, FM_WRITE);
 	if(!file.IsOpened()){
@@ -43,6 +39,9 @@ void CmdFilereceiveHandler(CIOBase &io, int argc, char **argv){
 			file.Close();
 			return;
 		}
+
+		if(!ioBufDSize)
+			continue;
 
 		if(isSwap){
 			// this variable used to control overflow

@@ -1,5 +1,27 @@
 
 source
+<<<<<<< HEAD
+line 1) int ruc_sem = -1;
+line 2) 
+line 3) void* ruc_test_worker(void *arg){
+
+
+identab
+id 2) 1
+id 3) 2438
+id 4) -1
+id 5) -3
+
+id 6) 1
+id 7) 2448
+id 8) 15
+id 9) 2
+
+id 10) 1
+id 11) 2466
+id 12) -150
+id 13) 3
+=======
 line 1) int main(){
 line 2) 	int distance;
 line 3) 
@@ -31,6 +53,7 @@ id 6) 1
 id 7) 2438
 id 8) -1
 id 9) 3
+>>>>>>> master
 
 
 modetab
@@ -53,6 +76,15 @@ md 15) 1001
 md 16) -150
 md 17) 1
 md 18) -150
+<<<<<<< HEAD
+
+tc 0) TDeclid displ= -3 eltype= -1 N= 0 all= 1 iniproc= 0, usual= 1 instuct= 0
+tc 8) TConst 1
+tc 10) TOper 9049
+tc 11) TExprend
+tc 12) TFuncdef funcn= 6 maxdispl= 0
+tc 15) TBegin
+=======
 md 19) 14
 md 20) 1001
 md 21) -1
@@ -120,3 +152,4 @@ tc 83) TConst 0
 tc 85) TExprend
 tc 86) TReturn
 tc 87) TEnd
+>>>>>>> master

@@ -1609,6 +1609,7 @@ void ruc_import(const char *filename)
 		return;
 	}
 
+
 	//fscanf(input, "%i %i %i %i %i %i %i\n", &pc, &funcnum, &id, &rp, &md, &maxdisplg, &wasmain);
 	pc = ruc_read_int(input, 1);
 	funcnum = ruc_read_int(input, 1);

@@ -47,7 +47,7 @@ void CConsole::WaitForCmd(CIOBase &io){
 	char *str = io.GetString();
 	io << endl;
 
-	if(!HandleCmd(io, str))
+	if(!HandleCmd(io, str) && strcmp(str, ""))
 		io << "Unknown cmd: " << str << endl;
 
 	free(str);
