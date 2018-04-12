@@ -24,6 +24,8 @@ int dbuff_init(int buff_size, dbuff_t *dbuff){
 	dbuff->buff1_sem = xSemaphoreCreateMutex();
 	dbuff->buff2_sem = xSemaphoreCreateMutex();
 
+	dbuff->read_started = 0;
+
 	return 0;
 }
 
@@ -46,8 +48,14 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 	while(xSemaphoreTake(sem, SEM_WAIT_TIME) != pdTRUE)
 		;
 
-	if(dbuff->read_buff == dbuff->write_buff && dbuff->read_ptr > dbuff->write_ptr){
+	if(dbuff->read_buff == dbuff->write_buff && dbuff->read_started && dbuff->read_ptr > dbuff->write_ptr){
 		int limit = dbuff->read_ptr - dbuff->write_ptr - 1;
+
+		if(limit < 0){
+			xSemaphoreGive(sem);
+			return 0;
+		}
+
 		if(can_write > limit)
 			can_write = limit;
 		cuz_of_readptr = 1;
@@ -73,8 +81,8 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 	// uart.Write(data, can_write);
 	// uart << endl;
     //
-	// uart << "Write ptr: " << dbuff->write_ptr << " Buffer: " << dbuff->write_buff << endl;
-	// uart << "Written: " << can_write << endl;
+	uart << "Write ptr: " << dbuff->write_ptr << " Buffer: " << dbuff->write_buff << endl;
+	//uart << "Written: " << can_write << endl;
 
 	if(cuz_of_readptr){
 		xSemaphoreGive(sem);
@@ -116,9 +124,10 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 			return 0;
 		}
 
-		limit = dbuff->write_ptr - dbuff->read_ptr;
+		limit = write_ptr - read_ptr;
 		if(limit < 0)
-			limit = 0;
+			uart << "Limit < 0 oO" << endl;
+			//limit = 0;
 		if(limit < can_read)
 			can_read = limit;
 	}
@@ -127,13 +136,16 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 	if(limit < can_read)
 		can_read = limit;
 
-	// uart << "Can read " << can_read << " of " << size << " bytes" << endl;
+	//uart << "Can read " << can_read << " of " << size << " bytes" << endl;
 
 	char *src = dbuff->read_buff ? dbuff->buff2 : dbuff->buff1;
 	memcpy((void*)dest, (void*)(src + read_ptr), can_read);
 
 	dbuff->read_ptr += can_read;
-	// uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
+	uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
+
+	if(can_read)
+		dbuff->read_started = 1;
 
 	if(dbuff->read_ptr == dbuff->buff_size){
 		dbuff->read_ptr = 0;
@@ -155,15 +167,21 @@ uint32_t dbuff_get_buffered_data_length(dbuff_t *dbuff){
 	}
 
 	int length = 0;
+	uint16_t readptr = dbuff->read_ptr;
+	uint16_t writeptr = dbuff->write_ptr;
 
 	if(dbuff->read_buff == dbuff->write_buff){
-		length = dbuff->write_ptr - dbuff->read_ptr;
+		length = writeptr > readptr ? writeptr - readptr : readptr - writeptr;
 		xSemaphoreGive(dbuff->buff2_sem);
 		xSemaphoreGive(dbuff->buff1_sem);
+
+		// uart << "Length1: " << length << endl;//" Readptr: " << dbuff->read_ptr << " Writeptr: " << dbuff->write_ptr << endl;
+
 		return length;
 	}
 
-	length += dbuff->write_ptr + dbuff->buff_size - dbuff->read_ptr;
+	length = writeptr + dbuff->buff_size - readptr;
+	// uart << "Length2: " << length << endl;
 
 	xSemaphoreGive(dbuff->buff2_sem);
 	xSemaphoreGive(dbuff->buff1_sem);

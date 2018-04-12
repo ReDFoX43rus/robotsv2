@@ -19,6 +19,8 @@ typedef struct {
 
 	SemaphoreHandle_t buff1_sem;
 	SemaphoreHandle_t buff2_sem;
+
+	uint8_t read_started; // FLAG if reader has starter. It's preventing overwrite first buffer if our writer is much more faster than reader
 } dbuff_t;
 
 int dbuff_init(int buff_size, dbuff_t *dbuff);

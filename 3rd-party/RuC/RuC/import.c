@@ -1604,10 +1604,13 @@ void ruc_import(const char *filename)
 
 	input = fopen(filename, "r");
 
+	printf("Interpreting: %s\n", filename);
+
 	if(!input){
 		printf("Cannot open file: %s\n", filename);
 		return;
 	}
+
 
 	//fscanf(input, "%i %i %i %i %i %i %i\n", &pc, &funcnum, &id, &rp, &md, &maxdisplg, &wasmain);
 	pc = ruc_read_int(input, 1);
