@@ -1604,8 +1604,6 @@ void ruc_import(const char *filename)
 
 	input = fopen(filename, "r");
 
-	printf("Interpreting: %s\n", filename);
-
 	if(!input){
 		printf("Cannot open file: %s\n", filename);
 		return;

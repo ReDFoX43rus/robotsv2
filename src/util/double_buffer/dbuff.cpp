@@ -77,13 +77,6 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 	memcpy((void*)(dest + dbuff->write_ptr), (void*)data, can_write);
 	dbuff->write_ptr += can_write;
 
-	// uart << "Write(" << can_write << "): ";
-	// uart.Write(data, can_write);
-	// uart << endl;
-    //
-	// uart << "Write ptr: " << dbuff->write_ptr << " Buffer: " << dbuff->write_buff << endl;
-	//uart << "Written: " << can_write << endl;
-
 	if(cuz_of_readptr){
 		xSemaphoreGive(sem);
 		return can_write;
@@ -97,7 +90,6 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 	}
 
 	if(size){
-		// uart << "calling dbuff_put for " << size << " bytes" << endl;
 		xSemaphoreGive(sem);
 		return can_write + dbuff_put(data + can_write, size, dbuff);
 	}
@@ -126,7 +118,6 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 
 		limit = write_ptr - read_ptr;
 		if(limit < 0)
-			// uart << "Limit < 0 oO" << endl;
 			limit = 0;
 		if(limit < can_read)
 			can_read = limit;
@@ -136,13 +127,10 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 	if(limit < can_read)
 		can_read = limit;
 
-	//uart << "Can read " << can_read << " of " << size << " bytes" << endl;
-
 	char *src = dbuff->read_buff ? dbuff->buff2 : dbuff->buff1;
 	memcpy((void*)dest, (void*)(src + read_ptr), can_read);
 
 	dbuff->read_ptr += can_read;
-	// uart << "Read ptr: " << dbuff->read_ptr << " bufferN: " << dbuff->read_buff << endl;
 
 	if(can_read)
 		dbuff->read_started = 1;
@@ -175,13 +163,10 @@ uint32_t dbuff_get_buffered_data_length(dbuff_t *dbuff){
 		xSemaphoreGive(dbuff->buff2_sem);
 		xSemaphoreGive(dbuff->buff1_sem);
 
-		// uart << "Length1: " << length << endl;//" Readptr: " << dbuff->read_ptr << " Writeptr: " << dbuff->write_ptr << endl;
-
 		return length;
 	}
 
 	length = writeptr + dbuff->buff_size - readptr;
-	// uart << "Length2: " << length << endl;
 
 	xSemaphoreGive(dbuff->buff2_sem);
 	xSemaphoreGive(dbuff->buff1_sem);
