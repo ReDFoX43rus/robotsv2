@@ -3,6 +3,7 @@
 
 #include "driver/gpio.h"
 #include "adc.h"
+#include "drivers/pulse_handler.h"
 
 class CColorSensor{
 public:
@@ -26,6 +27,7 @@ private:
 	gpio_num_t m_S3;
 	gpio_num_t m_Out;
 
+	CPulseHandler *m_PulseHandler;
 	CAdc *m_Adc;
 };
 
