@@ -79,10 +79,9 @@ static int pin = 0;
 extern void servo_power(int, int);
 extern int handle_sensor(int, const int *);
 extern void set_voltage(int, int);
-
-static int threads_inited = 0;
-void handle_end_of_thread(void);
-static TaskHandle_t main_task;
+/* handle pin-map for analog pins
+ * (watch handler_c.cpp) */
+extern void handle_pins(int*, int);
 
 static inline uint32_t timestamp(){
     uint32_t ccount;
@@ -163,9 +162,6 @@ void runtimeerr(int e, int i, int r)
 		default:
 			;
 	}
-	//exit(3);
-	if(xTaskGetCurrentTaskHandle() != main_task)
-		vTaskDelete(NULL);
 }
 
 void printf_char(int wchar)
@@ -365,7 +361,7 @@ void auxget(int beg, int t)
 		printf(" значения типа ФУНКЦИЯ и указателей вводить нельзя\n");
 }
 
-void interpreter(void*);
+void* interpreter(void*);
 
 int check_zero_int(int r)
 {
@@ -387,7 +383,7 @@ int dsp(int di, int l)
 	return di < 0 ? g - di : l + di;
 }
 
-void interpreter(void* pcPnt)
+void *interpreter(void* pcPnt)
 {
 	int l, x, origpc = *((int*) pcPnt), numTh = t_getThNum();
 	int N, bounds[100], d,from, prtype, cur0, pc = abs(origpc);
@@ -431,9 +427,6 @@ void interpreter(void* pcPnt)
 			case CREATEDIRECTC:
 				i = pc;
 				mem[++x] = t_create_inner(interpreter, (void*)&i);
-				if(mem[x] > 0){
-					threads_inited++;
-				}
 				break;
 
 			case CREATEC:
@@ -443,9 +436,6 @@ void interpreter(void* pcPnt)
 				entry = functions[i > 0 ? i : mem[l-i]];
 				i = entry + 3;                           // новый pc
 				mem[x] = t_create_inner(interpreter, (void*)&i);
-				if(mem[x] > 0){
-					threads_inited++;
-				}
 			}
 				break;
 
@@ -455,15 +445,13 @@ void interpreter(void* pcPnt)
 				break;
 
 			case SLEEPC:
-				sleep(mem[x--]);
+				t_sleep(mem[x--]);
 				break;
 
 			case EXITDIRECTC:
 			case EXITC:
-				// since t_eixt terminates current thread, we have to care about t_destroy here
-				t_prepare_exit();
-				handle_end_of_thread();
-				t_exit();
+				/* TODO: fix this */
+				t_exit(-1);
 				break;
 
 			case SEMCREATEC:
@@ -523,25 +511,31 @@ void interpreter(void* pcPnt)
 
 				break;
 
-			case GETDIGSENSORC:
+			case GETANSENSORC:
 				pin = mem[x--];
-				sensortype = -mem[x]; // 0 indicate to handle_sensor that it's digital sensor
+				sensortype = mem[x];
+
+				handle_pins(&pin, 1);
 
 				mem[x] = handle_sensor(sensortype, &pin);
-				if(mem[x] == -1)
+				if(mem[x] == -0x30)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
 				break;
 
-			case GETANSENSORC:
+			case GETDIGSENSORC:
 				array_ptr = mem[x--];
 				sensortype = mem[x];
+
+				if(sensortype == 7 || sensortype == 8)
+					sensortype *= -1;
 
 				array_size = mem[array_ptr - 1];
 				if(array_size >= max_array_size)
 					runtimeerr(robotsv2_too_long_array, 0, 0);
 
+				handle_pins(&mem[array_ptr], array_size);
 				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
-				if(mem[x] == -1)
+				if(mem[x] == -0x30)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
 				break;
 
@@ -1582,7 +1576,7 @@ void interpreter(void* pcPnt)
 		}
 	}
 
-	handle_end_of_thread();
+	return NULL;
 }
 
 int ruc_read_int(FILE* file, int stopn){
@@ -1614,6 +1608,7 @@ void ruc_import(const char *filename)
 		printf("Cannot open file: %s\n", filename);
 		return;
 	}
+
 
 	//fscanf(input, "%i %i %i %i %i %i %i\n", &pc, &funcnum, &id, &rp, &md, &maxdisplg, &wasmain);
 	pc = ruc_read_int(input, 1);
@@ -1656,9 +1651,6 @@ void ruc_import(const char *filename)
 	sem_init(&sempr, 1, 0);
 	sempr_inited = 1;
 
-	main_task = xTaskGetCurrentTaskHandle();
-
-	threads_inited = 1;
 	int init_res = t_init();
 	if(init_res != 0){
 		printf("init res: %d\n", init_res);
@@ -1666,18 +1658,12 @@ void ruc_import(const char *filename)
 	}
 
 	interpreter(&pc);                      // номер нити главной программы 0
+	printf("Calling t_destroy\n");
+	t_destroy();
 }
 
 int szof(int type)
 {
 	return type == LFLOAT ? 2 :
 	(type > 0 && modetab[type] == MSTRUCT) ? modetab[type + 1] : 1;
-}
-
-void handle_end_of_thread(void){
-	if(--threads_inited == 0){
-		printf("t_destroy is about to be called...\n");
-		t_destroy();
-		return;
-	}
 }

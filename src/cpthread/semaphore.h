@@ -1,3 +1,5 @@
+/* POSIX Binary semaphore wrapper */
+
 #ifndef PTHREAD_SEMAPHORE_H
 #define PTHREAD_SEMAPHORE_H
 

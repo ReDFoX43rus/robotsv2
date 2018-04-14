@@ -12,16 +12,14 @@
 #include "line_dig.h"
 #include "sharp_2y0a21.h"
 
+#include "uart.h"
+
 static bool crash_notifier = 0;
 static inline void crash_sensor_callback(void*);
 
 extern "C" int handle_sensor(int sensor_id, const int *data){
-	uart << "sensor_id: " << sensor_id << endl;
-
-	uart << "data: " << *data << endl;
-
 	if(sensor_id >= MAX_SENSORS)
-		return -1;
+		return -0x20;
 
 	static CColorSensor color_sensor;
 	static CHMC5883L compass;
@@ -34,15 +32,15 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 			return line_analog.GetData(data[0]);
 		}
 		case SENSOR_COLOR_RED: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::RED);
 		}
 		case SENSOR_COLOR_GREEN: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::GREEN);
 		}
 		case SENSOR_COLOR_BLUE: {
-			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (adc1_channel_t)data[4]);
+			color_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1], (gpio_num_t)data[2], (gpio_num_t)data[3], (gpio_num_t)data[4]);
 			return color_sensor.GetColor(CColorSensor::RED);
 		}
 		case SENSOR_COMPASS_X:
@@ -80,7 +78,10 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 		case SENSOR_HCSR04: {
 			static HCSR04 distance_sensor;
 			distance_sensor.Setup((gpio_num_t)data[0], (gpio_num_t)data[1]);
-			return distance_sensor.GetDistance();
+			int distance = distance_sensor.GetDistance();
+
+			/* filtering garbage (maybe its only my sensor is broken) */
+			return distance < 1e6 ? distance : -1;
 		}
 		case SENSOR_LINE_DIG: {
 			static CLineDig line_digital;
@@ -93,7 +94,7 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 		}
 
 		default:
-			return -1;
+			return -0x30;
 	}
 
 	return 0;
@@ -104,11 +105,22 @@ inline void crash_sensor_callback(void*){
 }
 
 extern "C" void set_voltage(int pin, int level){
-	uart << "pin: " << pin << " level: " << level << endl;
-
 	gpio_num_t gpio = (gpio_num_t)pin;
 
 	gpio_pad_select_gpio(gpio);
 	gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
 	gpio_set_level(gpio, level);
+}
+
+/* according to TRIK's pin-map
+ * we have to change sign on analog pins
+ * and remove 1
+ * (wantch https://github.com/Victor-Y-Fadeev/qreal/blob/iotik-v1-0/plugins/robots/generators/iotik/iotikRuCGeneratorLibrary/src/iotikRuCGeneratorPluginBase.cpp )*/
+extern "C" void handle_pins(int *pins, int size){
+	for(int i = 0; i < size; i++){
+		if(pins[i] < 0){
+			pins[i]++;
+			pins[i] *= 1;
+		}
+	}
 }

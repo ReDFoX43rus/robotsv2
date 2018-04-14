@@ -2,6 +2,7 @@
 #include "fileio/fileio.h"
 #include <cstdlib>
 #include <cstring>
+#include "uart.h"
 
 #define STRING_BUFF_SIZE 512
 #define INT_BUFF_SIZE 16

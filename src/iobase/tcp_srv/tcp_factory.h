@@ -9,7 +9,7 @@ class CTcpFactory{
 public:
 	static CTcpFactory *Instance();
 
-	int CreateTcp(uint16_t port);
+	int CreateTcp(uint16_t port, uint32_t heartbeatDelay = 10);
 	/* fixme: another access method to tcps */
 	CTcp *GetTcpByPort(uint16_t port);
 private:

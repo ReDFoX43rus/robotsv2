@@ -57,6 +57,7 @@ esp_err_t CWifi::event_handler(void *ctx, system_event_t *event)
 
 CWifi::CWifi(){
 	m_ScanRecords = NULL;
+	m_FlashAndAdapterInited = false;
 }
 
 CWifi::~CWifi(){
@@ -67,7 +68,7 @@ CWifi::~CWifi(){
 		delete[] m_ScanRecords;
 }
 
-int CWifi::Init(){
+int CWifi::FlashAndAdapterInit(){
 	esp_err_t err = nvs_flash_init();
 	if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
 		ESP_ERROR_CHECK(nvs_flash_erase());
@@ -86,13 +87,46 @@ int CWifi::Init(){
 	if(esp_wifi_init(&cfg) != ESP_OK)
 		return -3;
 
-	wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
-	wifi_config.sta.channel = 0;
+	return 0;
+}
 
-	if(esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK)
+int CWifi::Init(wifi_mode_t mode, const char *ssid, const char *password){
+	if(mode != WIFI_MODE_STA && !ssid)
+		return -7;
+    
+	int res = FlashAndAdapterInit();
+	if(res && !m_FlashAndAdapterInited){
+		/* We failed on first time init */
+		return res;
+	} else {
+		/* Seems like this function was called more than 1 time
+		 * So we just ignore error since nvs flash and tcp adapter already inited */
+	}
+
+	m_FlashAndAdapterInited = true;
+
+	if(mode == WIFI_MODE_STA){
+		wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+		wifi_config.sta.channel = 0;
+	} else {
+		strncpy((char*)wifi_config.ap.ssid, ssid, strlen(ssid));
+		if(password){
+			int len = strlen(password);
+			strncpy((char*)wifi_config.ap.password, password, len);
+			strncpy((char*)wifi_config.ap.password + len, "\0", 1);
+		}
+		else
+			memset((void*)wifi_config.ap.password, 0, 64);
+		wifi_config.ap.ssid_len = strlen(ssid);
+		wifi_config.ap.max_connection = 4;
+		wifi_config.ap.authmode = password ? WIFI_AUTH_WPA2_PSK : WIFI_AUTH_OPEN;
+		wifi_config.ap.beacon_interval = 400;
+	}
+  
+	if(esp_wifi_set_mode(mode) != ESP_OK)
 		return -4;
 
-	if(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) != ESP_OK)
+	if(esp_wifi_set_config(mode == WIFI_MODE_STA ? ESP_IF_WIFI_STA : ESP_IF_WIFI_AP, &wifi_config) != ESP_OK)
 		return -6;
 
 	if(esp_wifi_start() != ESP_OK)

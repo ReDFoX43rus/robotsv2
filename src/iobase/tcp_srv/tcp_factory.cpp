@@ -11,7 +11,7 @@ CTcpFactory::~CTcpFactory(){
 			delete m_apTcps[i];
 }
 
-int CTcpFactory::CreateTcp(uint16_t port){
+int CTcpFactory::CreateTcp(uint16_t port, uint32_t heartbeatDelay){
 	if(!IsPortFree(port))
 		return -1;
 
@@ -19,7 +19,7 @@ int CTcpFactory::CreateTcp(uint16_t port){
 	if(n == -1)
 		return -2;
 
-	m_apTcps[n] = new CTcp(port);
+	m_apTcps[n] = new CTcp(port, heartbeatDelay);
 	return m_apTcps[n]->Init() * 10;
 }
 

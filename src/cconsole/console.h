@@ -15,9 +15,13 @@ public:
 	CConsole();
 	~CConsole(){};
 
+	/* Sets cmd name and handler in m_Cmds array */
 	bool RegisterCmd(CmdTypes type, void (*Handler)(CIOBase &io, int argc, char **argv));
+
+	/* Calls cmd's handler that is located at ccmds folder */
 	bool HandleCmd(CIOBase &io, char *cmdstr);
 
+	/* Reads chars from CIOBase input untill we get cmd string */
 	void WaitForCmd(CIOBase &io);
 private:
 	cmd_t m_Cmds[MAX_CMDS];

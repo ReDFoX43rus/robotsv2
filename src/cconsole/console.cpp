@@ -23,7 +23,7 @@ bool CConsole::HandleCmd(CIOBase &io, char *cmdstr){
 	for(int i = 0; i < MAX_CMDS; i++){
 		const char *cmdName = m_Cmds[i].name;
 
-		if(!auth->IsAuthed() && strcmp(name, "auth")){
+		if(!auth->IsAuthed() && (strcmp(name, "auth") && strcmp(name, "exec"))){
 			io << "You are unauthed, auth first" << endl;
 			release_split(splited);
 			return true;
@@ -47,7 +47,7 @@ void CConsole::WaitForCmd(CIOBase &io){
 	char *str = io.GetString();
 	io << endl;
 
-	if(!HandleCmd(io, str))
+	if(!HandleCmd(io, str) && strcmp(str, ""))
 		io << "Unknown cmd: " << str << endl;
 
 	free(str);

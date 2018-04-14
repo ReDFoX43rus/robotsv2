@@ -23,6 +23,7 @@ def sendFile(filename):
 
 	print "Filename: " + os.path.basename(filename)
 	tty.write("filereceive " + "/fat/" + os.path.basename(filename) + " " + str(size) + "\n")
+	# tty.write("update " + str(size) + "\n");
 
 	time.sleep(0.5)
 

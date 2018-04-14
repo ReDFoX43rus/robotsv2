@@ -7,7 +7,7 @@ const rl = readline.createInterface({
 })
 fs = require('fs')
 
-const client = net.createConnection(80,"192.168.0.6", () => {
+const client = net.createConnection(3000,"192.168.4.1", () => {
 	console.log("Connected, use console mode")
 	rl.on('line', (input) => {
 		if(input == "update")
@@ -39,4 +39,5 @@ client.on('data', (data) => {
 });
 client.on('end', () => {
 	console.log('disconnected from server');
+	process.exit();
 });

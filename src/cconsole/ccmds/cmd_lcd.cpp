@@ -19,7 +19,6 @@ static void PrintTimeTask(void *arg){
 		minutes %= 60;
 		hours %= 24;
 
-		lcd.Clear();
 		lcd.Home();
 
 		char buff[64];
@@ -28,7 +27,7 @@ static void PrintTimeTask(void *arg){
 		lcd.WriteString(buff);
 
 		lcd.MoveCursor(1, 2);
-		sprintf(buff, "%d:%d:%d", hours, minutes, seconds);
+		sprintf(buff, "%02d:%02d:%02d", hours, minutes, seconds);
 		lcd.WriteString(buff);
 
 		vTaskDelay(pdMS_TO_TICKS(1000));
@@ -63,6 +62,6 @@ void CmdLcdHandler(CIOBase &io, int argc, char *argv[]){
 		lcd.MoveCursor(atoi(argv[2]), atoi(argv[3]));
 	else if (!strcmp(cmd, "uptime")){
 		TaskHandle_t handle;
-		xTaskCreate(PrintTimeTask, "uptime_task", 1024, NULL, 4, &handle);
+		xTaskCreate(PrintTimeTask, "uptime_task", 4096, NULL, 4, &handle);
 	}
 }
