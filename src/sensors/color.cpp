@@ -6,6 +6,7 @@ CColorSensor::CColorSensor(){
 }
 
 CColorSensor::~CColorSensor(){
+	CPulseHandler::RemoveInstance(PCNT_UNIT_0);
 	delete m_Adc;
 }
 

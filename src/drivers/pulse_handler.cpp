@@ -5,7 +5,7 @@
 #include "pulse_handler.h"
 #include "string.h"
 
-CPulseHandler* s_apHandlers[PCNT_UNIT_MAX] = {0};
+CPulseHandler* CPulseHandler::s_apHandlers[PCNT_UNIT_MAX] = {0};
 
 CPulseHandler::CPulseHandler(pcnt_unit_t pcnt_unit){
 	m_Unit = pcnt_unit;
@@ -93,12 +93,12 @@ short CPulseHandler::GetValue(){
 	return value;
 }
 
-uint32_t CPulseHandler::GetFrequency(){
+uint32_t CPulseHandler::GetFrequency(uint32_t delay_ms){
 	uint32_t ts1 = clock();
 	short value1 = GetValue();
 	bool wasPaused = Resume();
 
-	vTaskDelay(pdMS_TO_TICKS(10));
+	vTaskDelay(pdMS_TO_TICKS(delay_ms));
 
 	short value2 = GetValue();
 	uint32_t ts2 = clock();
@@ -153,6 +153,6 @@ bool CPulseHandler::RemoveInstance(pcnt_unit_t pcnt_unit){
 	return true;
 }
 
-static bool IsUnitFree(pcnt_unit_t pcnt_unit){
+bool CPulseHandler::IsUnitFree(pcnt_unit_t pcnt_unit){
 	return pcnt_unit > 0 && pcnt_unit < PCNT_UNIT_MAX && s_apHandlers[pcnt_unit] != NULL;
 }

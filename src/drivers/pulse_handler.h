@@ -33,7 +33,7 @@ public:
 
     short GetValue();
 
-    uint32_t GetFrequency();
+    uint32_t GetFrequency(uint32_t delay_ms = 10);
 
 private:
     static CPulseHandler *s_apHandlers[PCNT_UNIT_MAX];
