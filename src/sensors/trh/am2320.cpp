@@ -26,8 +26,7 @@ void CAm2320::Measure(){
 	receivedCrc |= (m_Buffer[7] << 8) | m_Buffer[6];
 
 	m_Ok = receivedCrc == CRC16(m_Buffer, 6);
-	uart << "receivedCrc: " << receivedCrc << " calc: " << CRC16(m_Buffer, 6) << endl;
-	//if(m_Ok)
+	if(m_Ok)
 	{
 		m_Humidity = ((m_Buffer[2] << 8) | m_Buffer[3])/10;
 
@@ -55,6 +54,7 @@ void CAm2320::Wakeup(){
 	i2c_master_cmd_begin_safe(I2C_NUM_0, cmd, TIMEOUT_MS);
 	i2c_cmd_link_delete(cmd);
 }
+
 int CAm2320::ReadRegs(uint8_t startAddr, uint8_t numRegs){
 	Wakeup();
 
@@ -71,12 +71,10 @@ int CAm2320::ReadRegs(uint8_t startAddr, uint8_t numRegs){
 	esp_err_t err = i2c_master_cmd_begin_safe(I2C_NUM_0, cmd, TIMEOUT_MS);
 	i2c_cmd_link_delete(cmd);
 
-	if(err != ESP_OK){
-		uart << "First request err: " << (int)err << endl;
+	if(err != ESP_OK)
 		return -2;
-	}
 
-	vTaskDelay(pdMS_TO_TICKS(1000));
+	ets_delay_us(1500);
 
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
@@ -91,13 +89,8 @@ int CAm2320::ReadRegs(uint8_t startAddr, uint8_t numRegs){
 	err = i2c_master_cmd_begin_safe(I2C_NUM_0, cmd, TIMEOUT_MS);
 	i2c_cmd_link_delete(cmd);
 
-	for(int i = 0; i < numRegs + 4; i++)
-		printf("[%d] 0x%X\n", i, m_Buffer[i]);
-
-	if(err != ESP_OK){
-		uart << "Second request err: ";
-		printf("0x%X\n", (int)err);
-	}
+	if(err != ESP_OK)
+		return -3;
 
 	return 0;
 }

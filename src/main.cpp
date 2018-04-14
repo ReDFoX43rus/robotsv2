@@ -10,8 +10,9 @@ extern "C" void app_main()
 {
 	initialize_filesystem();
 
-	/* Setup thread-safe i2c */
-	i2c_master_setup(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22, 400000);
+	/* Setup thread-safe i2c 
+	 * We cannot set frequency higher since am2320 dont wanna work :c */
+	i2c_master_setup(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22, 100000);
 
 	console.HandleCmd(uart, STARTUP_FILENAME);
 
