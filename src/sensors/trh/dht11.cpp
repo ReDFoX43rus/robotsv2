@@ -116,17 +116,6 @@ dht11_response_t CDht11::Measure(){
 
     res.ok = checksum == (res.temp1 + res.rh1);
 
-    // for(int i = 0; i < 40; i++)
-    //     uart << timeouts[i] << " ";
-    // uart << endl;
-
-    // for(int i = 39; i >= 0; i--){
-    //     if(i%8 == 0)
-    //         uart << " ";
-    //     uart << (uint8_t)((data>>i)&1);
-    // }
-    // uart << endl;
-
     return res;
 }
 

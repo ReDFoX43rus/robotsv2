@@ -64,5 +64,8 @@ uint8_t CColorSensor::GetColor(Color color){
 			break;
 	}
 
+	if(m_PulseHandler)
+		m_PulseHandler->Clear();
+		
 	return m_PulseHandler ? m_PulseHandler->GetFrequency() : 0;
 }

@@ -64,7 +64,12 @@ bool CPulseHandler::ApplyConfig(pcnt_channel_t channel){
 
 	m_Configs[channel] = m_TmpConfig;
 
-	return pcnt_unit_config(&m_TmpConfig) == ESP_OK;
+	bool result = pcnt_unit_config(&m_TmpConfig) == ESP_OK;
+	pcnt_counter_clear(m_Unit);
+	pcnt_counter_resume(m_Unit);
+	m_Paused = false;
+
+	return result;
 }
 
 bool CPulseHandler::Pause() {
@@ -107,6 +112,7 @@ uint32_t CPulseHandler::GetFrequency(uint32_t delay_ms){
 		Pause();
 
 	uint32_t msDiff = (ts2 - ts1)*1000/CLOCKS_PER_SEC;
+
 	if(msDiff == 0)
 		return 0;
 
