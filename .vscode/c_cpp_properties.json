@@ -37,9 +37,14 @@
                 "${workspaceFolder}/3rd-party/esp-idf/components/soc/include",
                 "${workspaceFolder}/3rd-party/esp-idf/components/driver/include",
                 "${workspaceFolder}/3rd-party/esp-idf/components/lwip/include/lwip/posix/",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/3rd-party/esp-idf/components/lwip/include/lwip",
+                "${workspaceFolder}/3rd-party/esp-idf/components/lwip/include/lwip/port",
+                "${workspaceFolder}/3rd-party/esp-idf/components/esp_adc_cal/include"
             ],
-            "defines": [],
+            "defines": [
+                "CONFIG_FREERTOS_HZ"
+            ],
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
