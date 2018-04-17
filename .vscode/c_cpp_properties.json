@@ -40,7 +40,9 @@
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/3rd-party/esp-idf/components/lwip/include/lwip",
                 "${workspaceFolder}/3rd-party/esp-idf/components/lwip/include/lwip/port",
-                "${workspaceFolder}/3rd-party/esp-idf/components/esp_adc_cal/include"
+                "${workspaceFolder}/3rd-party/esp-idf/components/esp_adc_cal/include",
+                "${workspaceFolder}/3rd-party/esp-idf/components/app_update/include",
+                "${workspaceFolder}/3rd-party/esp-idf/components/spi_flash/include"
             ],
             "defines": [
                 "CONFIG_FREERTOS_HZ"

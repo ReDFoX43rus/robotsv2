@@ -1,6 +1,6 @@
 #include "dbuff.h"
 #include "string.h"
-#include "uart.h"
+// #include "uart.h"
 
 #define DBUFF_MAX_SIZE (1024*8)
 #define SEM_WAIT_TIME pdMS_TO_TICKS(10)
@@ -89,6 +89,8 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 		dbuff->write_buff = !dbuff->write_buff;
 	}
 
+	// uart << "Write ptr: " << dbuff->write_ptr << " Buff: " << dbuff->write_buff << endl;
+
 	if(size){
 		xSemaphoreGive(sem);
 		return can_write + dbuff_put(data + can_write, size, dbuff);
@@ -131,6 +133,8 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 	memcpy((void*)dest, (void*)(src + read_ptr), can_read);
 
 	dbuff->read_ptr += can_read;
+
+	// uart << "Read ptr: " << dbuff->read_ptr << " Buff: " << dbuff->read_buff << endl;	
 
 	if(can_read)
 		dbuff->read_started = 1;
