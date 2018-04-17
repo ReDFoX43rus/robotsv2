@@ -95,13 +95,18 @@ void CTcp::HandleClient(void *arg){
 		}
 
 		char buff[TCPIO_RECV_BUFF_SIZE];
-		int len, stored = 0;
+		int len, stored = 0, tmpCounter = 0;
 
 		while((len = recv(tcp->m_ConnectSocket, buff, TCPIO_RECV_BUFF_SIZE, 0)) > 0){
 			while(stored < len){
 				stored += dbuff_put(buff + stored, len - stored, &tcp->m_DBuff);
+
+				if(stored < len && tmpCounter++)
+					vTaskDelay(pdMS_TO_TICKS(40));
+
 			}
 			stored = 0;
+			tmpCounter = 0;
 
 			if(tcp->m_HeartbeatDelay && tcp->m_HeartbeatSem && xSemaphoreTake(tcp->m_HeartbeatSem, TCPIO_SEM_WAIT_TIME) == pdTRUE){
 				tcp->m_LastHeartbeat = clock() / CLOCKS_PER_SEC;
@@ -189,6 +194,7 @@ int CTcp::GetBytes(char *data, size_t size){
 void CTcp::ClearBuffer(){
 	while(dbuff_clear_buffer(&m_DBuff))
 		;
+	m_DBuff.read_started = 0;
 }
 
 void CTcp::CheckHeartbeat(void *arg){
