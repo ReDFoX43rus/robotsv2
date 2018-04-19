@@ -46,7 +46,7 @@ int dbuff_put(const char *data, size_t size, dbuff_t *dbuff){
 
 	SemaphoreHandle_t sem = dbuff->write_buff ? dbuff->buff2_sem : dbuff->buff1_sem;
 	while(xSemaphoreTake(sem, SEM_WAIT_TIME) != pdTRUE)
-		vTaskDelay(pdMS_TO_TICKS(20));
+		vTaskDelay(pdMS_TO_TICKS(rand()%15 + 5));
 
 	if(dbuff->read_buff == dbuff->write_buff && dbuff->read_started && dbuff->read_ptr > dbuff->write_ptr){
 		int limit = dbuff->read_ptr - dbuff->write_ptr - 1;
@@ -108,7 +108,7 @@ int dbuff_read(char *dest, size_t size, dbuff_t *dbuff){
 	SemaphoreHandle_t sem = dbuff->read_buff ? dbuff->buff2_sem : dbuff->buff1_sem;
 
 	while(xSemaphoreTake(sem, SEM_WAIT_TIME) != pdTRUE)
-		vTaskDelay(pdMS_TO_TICKS(20));
+		vTaskDelay(pdMS_TO_TICKS(rand()%15 + 5));
 
 	int read_ptr = dbuff->read_ptr;
 	int write_ptr = dbuff->write_ptr;

@@ -271,7 +271,6 @@ public:
 
 	/* Returnes table that describes symbol chr */
 	virtual uint8_t *GetASCIICharTable(uint8_t chr) = 0;
-
 	uint8_t GetCharWidth(uint8_t *chrTable) {return *chrTable;}
 	uint8_t GetCharHeight(uint8_t *chrTable) {return *(++chrTable);}
 };
@@ -280,6 +279,14 @@ class CFont10x16 : public CFont{
 public:
 	CFont10x16(){}
 	~CFont10x16(){}
+
+	uint8_t *GetASCIICharTable(uint8_t chr);
+};
+
+class CFont6x8 : public CFont{
+public:
+	CFont6x8(){}
+	~CFont6x8(){}
 
 	uint8_t *GetASCIICharTable(uint8_t chr);
 };

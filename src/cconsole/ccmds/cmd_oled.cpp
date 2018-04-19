@@ -1,10 +1,11 @@
 #include "iobase/iobase.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #include "drivers/display.h"
 #include "util/fonts/font.h"
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 
 void CmdOledHandler(CIOBase &io, int argc, char *argv[])
 {
@@ -40,7 +41,8 @@ void CmdOledHandler(CIOBase &io, int argc, char *argv[])
 
 	display.DrawRectangle(1, 1, 126, 62);
 
-	display.DrawString(6, 62/2, CFont::FONT_10x16, (uint8_t*)"Hello, oled world");
+	display.DrawString(3, 20, CFont::FONT_10x16, (uint8_t*)"Hello, oled world");
+	display.DrawString(3, 40, CFont::FONT_6x8, (uint8_t*)"Robotsv2 project");
 
 	display.UpdateFromBuff();
 }

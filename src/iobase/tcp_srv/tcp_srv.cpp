@@ -101,8 +101,10 @@ void CTcp::HandleClient(void *arg){
 			while(stored < len){
 				stored += dbuff_put(buff + stored, len - stored, &tcp->m_DBuff);
 
-				if(stored < len && tmpCounter++)
+				if(stored < len && tmpCounter++){
+					uart << "Buffer overloaded, wainting..." << endl;
 					vTaskDelay(pdMS_TO_TICKS(40));
+				}
 
 			}
 			stored = 0;

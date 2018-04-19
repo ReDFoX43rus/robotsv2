@@ -134,7 +134,10 @@ void COledDisplay::DrawCircle(uint16_t x, uint16_t y, uint16_t radius)
 }
 uint8_t COledDisplay::DrawChar(uint8_t x, uint8_t y, uint8_t fontID, uint8_t chr, uint16_t *charHeight)
 {
-	CFont *font = new CFont10x16();
+	CFont *font;
+	if(fontID == CFont::FONT_6x8)
+		font = new CFont6x8();
+	else font = new CFont10x16();
 
 	uint8_t *pCharTable = font->GetASCIICharTable(chr);
 	uint8_t CharWidth = font->GetCharWidth(pCharTable);   // Ўирина символа
@@ -144,15 +147,15 @@ uint8_t COledDisplay::DrawChar(uint8_t x, uint8_t y, uint8_t fontID, uint8_t chr
 	if(charHeight)
 		*charHeight = CharHeight;
 
-	// if (FontID == FONTID_6X8M)
-	// {
-	// 	for (uint8_t row = 0; row < CharHeight; row++)
-	// 	{
-	// 		for (uint8_t col = 0; col < CharWidth; col++)
-	// 			disp1color_DrawPixel(X + col, Y + row, pCharTable[row] & (1 << (7 - col)));
-	// 	}
-	// }
-	// else
+	if (fontID == CFont::FONT_6x8)
+	{
+		for (uint8_t row = 0; row < CharHeight; row++)
+		{
+			for (uint8_t col = 0; col < CharWidth; col++)
+				DrawPixel(x + col, y + row, pCharTable[row] & (1 << (7 - col)));
+		}
+	}
+	else
 	{
 		for (uint8_t row = 0; row < CharHeight; row++)
 		{
