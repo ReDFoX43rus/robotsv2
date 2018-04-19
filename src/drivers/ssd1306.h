@@ -99,4 +99,12 @@ private:
 	void SendCommand(uint8_t cmd, uint8_t *pBuff, uint16_t buffLen);
 
 	void ChargePumpSetting(uint8_t Value);
+
+	void SetCOMoutScanDirection(uint8_t value);
+
+	void SetCOMPinsConfig(uint8_t altComPinConfig, uint8_t leftRightRemap);
+
+	void SetPrechargePeriod(uint8_t phase1Period, uint8_t phase2Period);
+
+	void SetVCOMHDeselectLevel(uint8_t code);
 };

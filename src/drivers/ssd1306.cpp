@@ -61,16 +61,16 @@ CSSD1306::CSSD1306(uint8_t width, uint8_t height, AutoShiftMode shiftMode, IfTyp
 	SetSegmentRemap(0);		   
 	// SetCOMoutScanDirection(0);
 
-	// if ((m_Width == 128) && (m_Height == 32))
-	// 	SetCOMPinsConfig(0, 0);
-	// else if ((m_Width == 128) && (m_Height == 64))
-	// 	SetCOMPinsConfig(1, 0);
-	// else if ((m_Width == 96) && (m_Height == 16))
-	// 	SetCOMPinsConfig(0, 0);
+	if ((m_Width == 128) && (m_Height == 32))
+		SetCOMPinsConfig(0, 0);
+	else if ((m_Width == 128) && (m_Height == 64))
+		SetCOMPinsConfig(1, 0);
+	else if ((m_Width == 96) && (m_Height == 16))
+		SetCOMPinsConfig(0, 0);
 
 	SetContrast(127);
-	// SetPrechargePeriod(2, 2);
-	// SetVCOMHDeselectLevel(0x40);
+	SetPrechargePeriod(2, 2);
+	SetVCOMHDeselectLevel(0x40);
 	AllPixRAM();
 	SetInverse(false);
 	DeactivateScroll();
@@ -82,10 +82,10 @@ CSSD1306::~CSSD1306()
 
 void CSSD1306::SetResetPinConfig(bool resetPinUsed, gpio_num_t resetGPIO)
 {
+	assert(!resetPinUsed && "Using reset pin is not supported yet");
+
 	m_ResetPinUsed = resetPinUsed;
 	m_ResetGPIO = resetGPIO;
-
-	assert("Using reset pin is not supported yet");
 }
 
 void CSSD1306::SendData(uint8_t *pBuff, uint16_t buffLen)
@@ -208,4 +208,39 @@ void CSSD1306::ChargePumpSetting(uint8_t Value)
 {
 	Value = Value ? 0x14 : 0x10;
 	SendCommand(SSD1306_CMD_ChargePumpSetting, &Value, 1);
+}
+
+void CSSD1306::SetCOMoutScanDirection(uint8_t value){
+	value = value ? 0x08 : 0x00;
+
+	SendCommand(SSD1306_CMD_SetCOMoutScanDirection | value, 0, 0);
+}
+void CSSD1306::SetCOMPinsConfig(uint8_t altComPinConfig, uint8_t leftRightRemap){
+	uint8_t value = (1<<1);
+
+	if(altComPinConfig)
+		value |= 1 << 4;
+	
+	if(leftRightRemap)
+		value |= 1 << 5;
+
+	SendCommand(SSD1306_CMD_SetCOMPinsConfig, &value, 1);
+}
+void CSSD1306::SetPrechargePeriod(uint8_t phase1Period, uint8_t phase2Period){
+	phase1Period &= 0xF;
+	phase2Period &= 0xF;
+
+	if(!phase1Period)
+		phase1Period = 2;
+
+	if(!phase2Period)
+		phase2Period = 2;
+
+	phase1Period |= phase2Period << 4;
+
+	SendCommand(SSD1306_CMD_SetPrechargePeriod, &phase1Period, 1);
+}
+void CSSD1306::SetVCOMHDeselectLevel(uint8_t code){
+	code &= 0x70;
+	SendCommand(SSD1306_CMD_SetVCOMHDeselectLevel, &code, 1);
 }

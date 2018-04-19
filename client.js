@@ -7,7 +7,7 @@ const rl = readline.createInterface({
 })
 fs = require('fs')
 
-const client = net.createConnection(3000,"192.168.0.6", () => {
+const client = net.createConnection(3000,"192.168.43.174", () => {
 	console.log("Connected, use console mode")
 	rl.on('line', (input) => {
 		if(input == "update")
