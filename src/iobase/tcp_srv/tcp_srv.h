@@ -12,8 +12,6 @@
 #define TCPIO_RECV_BUFF_SIZE 512 // size of recv buffer
 #define TCPIO_SEM_WAIT_TIME pdMS_TO_TICKS(100)
 
-#define TCPIO_SEND_BUFF_SIZE 1024 // size of each buffer of double buffering system for send
-
 class CTcp : public CIOBase{
 public:
 	CTcp(uint16_t port, uint32_t heartbeatDelay);
