@@ -23,7 +23,7 @@ public:
 	void DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 	void DrawCircle(uint16_t x1, uint16_t x2, uint16_t radius);
 
-	uint8_t DrawChar(uint8_t x, uint8_t y, uint8_t fontID, uint8_t chr);
+	uint8_t DrawChar(uint8_t x, uint8_t y, uint8_t fontID, uint8_t chr, uint16_t *charHeight = 0);
 	void DrawString(uint8_t x, uint8_t y, uint8_t fontID, uint8_t *str);
 	void DrawPixel(uint16_t x, uint16_t y, bool on);
 private:

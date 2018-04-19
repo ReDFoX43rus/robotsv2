@@ -3,6 +3,8 @@
 #include "string.h"
 #include "math.h"
 
+#include "util/fonts/font.h"
+
 #define PI 3.14159265
 
 COledDisplay::COledDisplay(uint16_t width, uint16_t height, Display_Controller type)
@@ -80,8 +82,8 @@ uint16_t COledDisplay::GetYFromStraight(uint16_t x1, uint16_t y1, uint16_t x2, u
 
 void COledDisplay::DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
-	const int16_t deltaX = abs(x2 - x1);
-	const int16_t deltaY = abs(y2 - y1);
+	const int16_t deltaX = x2 - x1 > 0 ? x2 - x1 : x1 - x2;
+	const int16_t deltaY = y2 - y1 > 0 ? y2 - y1 : y1 - y2;
 	const int16_t signX = x1 < x2 ? 1 : -1;
 	const int16_t signY = y1 < y2 ? 1 : -1;
 
@@ -130,10 +132,66 @@ void COledDisplay::DrawCircle(uint16_t x, uint16_t y, uint16_t radius)
 		DrawPixel(drawX, drawY, true);
 	}
 }
-uint8_t COledDisplay::DrawChar(uint8_t x, uint8_t y, uint8_t fontID, uint8_t chr)
+uint8_t COledDisplay::DrawChar(uint8_t x, uint8_t y, uint8_t fontID, uint8_t chr, uint16_t *charHeight)
 {
-	return 0;	
+	CFont *font = new CFont10x16();
+
+	uint8_t *pCharTable = font->GetASCIICharTable(chr);
+	uint8_t CharWidth = font->GetCharWidth(pCharTable);   // Ўирина символа
+	uint8_t CharHeight = font->GetCharHeight(pCharTable); // ¬ысота символа
+	pCharTable += 2;
+
+	if(charHeight)
+		*charHeight = CharHeight;
+
+	// if (FontID == FONTID_6X8M)
+	// {
+	// 	for (uint8_t row = 0; row < CharHeight; row++)
+	// 	{
+	// 		for (uint8_t col = 0; col < CharWidth; col++)
+	// 			disp1color_DrawPixel(X + col, Y + row, pCharTable[row] & (1 << (7 - col)));
+	// 	}
+	// }
+	// else
+	{
+		for (uint8_t row = 0; row < CharHeight; row++)
+		{
+			for (uint8_t col = 0; col < CharWidth; col++)
+			{
+				if (col < 8)
+					DrawPixel(x + col, y + row, pCharTable[row * 2] & (1 << (7 - col)));
+				else
+					DrawPixel(x + col, y + row, pCharTable[(row * 2) + 1] & (1 << (15 - col)));
+			}
+		}
+	}
+
+	delete font;
+	return CharWidth;
 }
 void COledDisplay::DrawString(uint8_t x, uint8_t y, uint8_t fontID, uint8_t *str)
 {
+	if(!str || x >= m_Width || y >= m_Height)
+		return;
+
+	uint8_t done = 0;
+	uint8_t beginX = x;
+	uint16_t newLineOffset = 8;
+
+	while(!done){
+		switch(*str){
+			case '\0':
+				done = true;
+				break;
+			case '\n':
+				y += newLineOffset;
+				break;
+			case '\r':
+				x = beginX;
+				break;
+			default:
+				x += DrawChar(x, y, fontID, *str++, &newLineOffset);
+				break; 
+		};
+	}
 }

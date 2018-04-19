@@ -1,6 +1,7 @@
 #include "iobase/iobase.h"
 
 #include "drivers/display.h"
+#include "util/fonts/font.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -31,5 +32,15 @@ void CmdOledHandler(CIOBase &io, int argc, char *argv[])
 	display.DrawLine(20, 0, 21, 64);	
 
 	/* Commit */
+	display.UpdateFromBuff();
+
+	vTaskDelay(pdMS_TO_TICKS(500));
+
+	display.FillScreenBuff(0);
+
+	display.DrawRectangle(1, 1, 126, 62);
+
+	display.DrawString(6, 62/2, CFont::FONT_10x16, (uint8_t*)"Hello, oled world");
+
 	display.UpdateFromBuff();
 }
