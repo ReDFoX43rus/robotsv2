@@ -17,8 +17,8 @@ typedef struct {
 	uint8_t read_buff;
 	uint8_t write_buff;
 
-	SemaphoreHandle_t buff1_sem;
-	SemaphoreHandle_t buff2_sem;
+	SemaphoreHandle_t read_sem;
+	SemaphoreHandle_t write_sem;
 
 	uint8_t read_started; // FLAG if reader has starter. It's preventing overwrite first buffer if our writer is much more faster than reader
 } dbuff_t;

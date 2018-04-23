@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "condition_variable": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "ratio": "cpp",
+        "system_error": "cpp",
+        "type_traits": "cpp",
+        "*.contiki": "cpp"
     }
 }
