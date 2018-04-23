@@ -114,7 +114,7 @@ extern "C" void set_voltage(int pin, int level){
 
 /* according to TRIK's pin-map
  * we have to change sign on analog pins
- * and remove 1
+ * and remove 1 (don't need in new version since there isnt A0)
  * (wantch https://github.com/Victor-Y-Fadeev/qreal/blob/iotik-v1-0/plugins/robots/generators/iotik/iotikRuCGeneratorLibrary/src/iotikRuCGeneratorPluginBase.cpp )*/
 extern "C" void handle_pins(int *pins, int size){
 	for(int i = 0; i < size; i++){
