@@ -1584,8 +1584,8 @@ int ruc_read_int(FILE* file, int stopn){
 	int result = 0;
 	char buff = 48;
 	char tmp = 0;
-	while(((tmp = buff-48) < 10) || buff == '-' || (buff == '\n' && !stopn)){
-		if(buff != '\n'){
+	while(((tmp = buff-48) < 10) || buff == '-' || ((buff == '\n' || buff == '\r') && !stopn)){
+		if(buff != '\n' && buff != '\r'){
 			if(buff != '-'){
 			result *= 10;
 			result += tmp;
