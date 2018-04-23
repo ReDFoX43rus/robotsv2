@@ -6,7 +6,7 @@
 class HCSR04{
 public:
 	int GetDistance();
-	void Setup(gpio_num_t echo, gpio_num_t trig);
+	void Setup(gpio_num_t trig, gpio_num_t echo);
 private:
 	gpio_num_t m_Echo;
 	gpio_num_t m_Trig;

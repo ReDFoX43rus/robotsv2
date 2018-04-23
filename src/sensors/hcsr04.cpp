@@ -10,7 +10,7 @@ static inline uint32_t timestamp(){
     return ccount / 16;
 }
 
-void HCSR04::Setup(gpio_num_t echo, gpio_num_t trig){
+void HCSR04::Setup(gpio_num_t trig, gpio_num_t echo){
 	m_Echo = echo;
 	m_Trig = trig;
 
