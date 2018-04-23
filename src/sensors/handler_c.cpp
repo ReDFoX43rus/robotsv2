@@ -119,7 +119,7 @@ extern "C" void set_voltage(int pin, int level){
 extern "C" void handle_pins(int *pins, int size){
 	for(int i = 0; i < size; i++){
 		if(pins[i] < 0){
-			pins[i]++;
+			// pins[i]++;
 			pins[i] *= 1;
 		}
 	}
