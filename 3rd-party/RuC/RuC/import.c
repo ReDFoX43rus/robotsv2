@@ -77,6 +77,7 @@ static int array_size = 0;
 static int level = 0;
 static int pin = 0;
 extern void servo_power(int, int);
+extern void init_servo(int, int, int, int);
 extern int handle_sensor(int, const int *);
 extern void set_voltage(int, int);
 
@@ -496,6 +497,7 @@ void *interpreter(void* pcPnt)
 				motor_power = mem[x--];
 				motor_n = mem[x--];
 
+				init_servo(22, 21, 12, 13);
 				servo_power(motor_n, motor_power);
 			}
 				break;
