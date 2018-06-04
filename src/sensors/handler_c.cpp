@@ -109,7 +109,7 @@ extern "C" void set_voltage(int pin, int level){
 
 	gpio_pad_select_gpio(gpio);
 	gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
-	gpio_set_level(gpio, level);
+	gpio_set_level(gpio, level == 0 ? 0 : 1);
 }
 
 /* according to TRIK's pin-map
