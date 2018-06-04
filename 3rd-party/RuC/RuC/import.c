@@ -79,9 +79,6 @@ static int pin = 0;
 extern void servo_power(int, int);
 extern int handle_sensor(int, const int *);
 extern void set_voltage(int, int);
-/* handle pin-map for analog pins
- * (watch handler_c.cpp) */
-extern void handle_pins(int*, int);
 
 static inline uint32_t timestamp(){
     uint32_t ccount;
@@ -515,8 +512,6 @@ void *interpreter(void* pcPnt)
 				pin = mem[x--];
 				sensortype = mem[x];
 
-				handle_pins(&pin, 1);
-
 				mem[x] = handle_sensor(sensortype, &pin);
 				if(mem[x] == -0x30)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
@@ -533,7 +528,6 @@ void *interpreter(void* pcPnt)
 				if(array_size >= max_array_size)
 					runtimeerr(robotsv2_too_long_array, 0, 0);
 
-				handle_pins(&mem[array_ptr], array_size);
 				mem[x] = handle_sensor(sensortype, &mem[array_ptr]);
 				if(mem[x] == -0x30)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);

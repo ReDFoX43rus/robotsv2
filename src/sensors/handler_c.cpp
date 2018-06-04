@@ -2,6 +2,7 @@
 #include "uart.h"
 
 #include "driver/gpio.h"
+#include "driver/ledc.h"
 
 #include "line_analog.h"
 #include "color.h"
@@ -16,6 +17,15 @@
 
 static bool crash_notifier = 0;
 static inline void crash_sensor_callback(void*);
+
+/* map for pin to channel converting
+ * 0 - LEDC_CHANNEL_2
+ * 1 - LEDC_CHANNEL_3
+ * 2 - LEDC_CHANNEL_4
+ * 3 - LEDC_CHANNEL_5
+ * 4 - LEDC_CHANNEL_6
+ * 5 - LEDC_CHANNEL_7 */
+static int ledc_channels[6] = {-1,-1,-1,-1,-1,-1};
 
 extern "C" int handle_sensor(int sensor_id, const int *data){
 	if(sensor_id >= MAX_SENSORS)
@@ -104,23 +114,59 @@ inline void crash_sensor_callback(void*){
 	crash_notifier = true;
 }
 
+
+inline ledc_channel_t pin_to_channel(int pin){
+	if (ledc_channels[0] == -1){
+		ledc_timer_config_t ledc_timer;
+
+		ledc_timer.bit_num = LEDC_TIMER_13_BIT;
+		ledc_timer.freq_hz = 5000;
+		ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
+		ledc_timer.timer_num =  LEDC_TIMER_0;
+
+		ledc_timer_config(&ledc_timer);
+	}
+
+	int i = 0;
+	while(i < 6 && ledc_channels[i] != -1 && ledc_channels[i] != pin){
+		i++;
+	}
+
+	if (i >= 6) {
+		return LEDC_CHANNEL_0;
+	}
+
+	if (ledc_channels[i] == -1){
+		ledc_channel_config_t ledc_channel;
+
+		ledc_channel.channel = (ledc_channel_t)(i + 2);
+		ledc_channel.duty = 0;
+		ledc_channel.gpio_num = pin;
+		ledc_channel.speed_mode = LEDC_HIGH_SPEED_MODE;
+		ledc_channel.timer_sel =  LEDC_TIMER_0;
+
+		ledc_channel_config(&ledc_channel);
+		ledc_channels[i] = pin;
+	}
+	
+	return (ledc_channel_t)(i + 2);
+}
+
 extern "C" void set_voltage(int pin, int level){
+	if (level > 0 && level < 255){
+		ledc_channel_t channel = pin_to_channel(pin);
+
+		if (channel != LEDC_CHANNEL_0) {
+			ledc_set_duty(LEDC_HIGH_SPEED_MODE, channel, 32*level);
+			ledc_update_duty(LEDC_HIGH_SPEED_MODE, channel);
+		}
+
+		return;
+	}
+
 	gpio_num_t gpio = (gpio_num_t)pin;
 
 	gpio_pad_select_gpio(gpio);
 	gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
-	gpio_set_level(gpio, level == 0 ? 0 : 1);
-}
-
-/* according to TRIK's pin-map
- * we have to change sign on analog pins
- * and remove 1 (don't need in new version since there isnt A0)
- * (wantch https://github.com/Victor-Y-Fadeev/qreal/blob/iotik-v1-0/plugins/robots/generators/iotik/iotikRuCGeneratorLibrary/src/iotikRuCGeneratorPluginBase.cpp )*/
-extern "C" void handle_pins(int *pins, int size){
-	for(int i = 0; i < size; i++){
-		if(pins[i] < 0){
-			// pins[i]++;
-			pins[i] *= 1;
-		}
-	}
+	gpio_set_level(gpio, level <= 0 ? 0 : 1);
 }
