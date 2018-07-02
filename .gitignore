@@ -5,3 +5,4 @@ disasm
 flash_encryption_key.bin
 startup.sc
 client.js
+.vscode
