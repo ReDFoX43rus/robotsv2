@@ -1,3 +1,0 @@
-[submodule "3rd-party/esp-idf"]
-	path = 3rd-party/esp-idf
-	url = git@github.com:ReDFoX43rus/esp-idf.git
