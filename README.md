@@ -13,7 +13,7 @@ This framework is on develop state right now
 * Upload program then execute
 
 ## Getting started with development
-1. Follow getting started guide from [esp-idf](http://esp-idf.readthedocs.io/en/latest/get-started/index.html)
+1. Download standard toolchain for [Linux](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/linux-setup.html) & follow getting started guide from [esp-idf](http://esp-idf.readthedocs.io/en/latest/get-started/index.html)
 2. Install and configure `minicom` for Linux or `PuTTY` for Windows
 * Serial Device `/dev/ttyUSB0` for Linux
 * Hardware flow control: `no`
