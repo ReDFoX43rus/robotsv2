@@ -1,0 +1,8 @@
+#include "water.h"
+
+int CWater::GetData(gpio_num_t output){
+	gpio_pad_select_gpio(output);
+	gpio_set_direction(output, GPIO_MODE_INPUT);
+
+	return gpio_get_level(output);
+}

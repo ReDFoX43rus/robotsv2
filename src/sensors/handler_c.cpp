@@ -13,6 +13,7 @@
 #include "line_dig.h"
 #include "sharp_2y0a21.h"
 #include "lm35.h"
+#include "water.h"
 
 #include "uart.h"
 
@@ -107,6 +108,10 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 			static LM35 temp_sensor;
 			temp_sensor.ChangePin(data[0]);
 			return temp_sensor.GetTemperature();
+		}
+		case SENSOR_WATER: {
+			static CWater water = CWater();
+			return water.GetData((gpio_num_t)data[0]);
 		}
 
 		default:
