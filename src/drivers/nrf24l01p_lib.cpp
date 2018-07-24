@@ -47,12 +47,12 @@ void CNRFLib::Begin(nrf_mode_t mode){
 	for(int i = 0; i < 6; i++)
 		WriteReg(NRF_REG_RX_PW_P0, MAX_PAYLOAD);
 
-	SetDataRateAndPower(NRF_DATA_RATE_250k, NRF_POWER_0dBm);
-
 	FlushTX();
 	FlushRX();
 
 	SetAutoRetransmission(10, 5);
+	SetChannel(77);
+	SetDataRateAndPower(NRF_DATA_RATE_250k, NRF_POWER_0dBm);
 
 	/* Setup config register */
 	nrf_reg_config_t cfg;
@@ -362,6 +362,30 @@ void CNRFLib::SetTxAddr(uint8_t *pAddr, uint8_t length){
 }
 void CNRFLib::GetTxAddr(uint8_t *pAddr){
 	WriteBytes(NRF_CMD_R_REGISTER | NRF_REG_TX_ADDR, pAddr, 5);
+}
+
+void CNRFLib::ScanChannels(uint64_t &firstHalf, uint64_t &secondHalf){
+	nrf_mode_t wasMode = m_Mode;
+	if(wasMode == nrf_tx_mode)
+		SetRxMode();
+
+	for(int i = 0; i < 64; i++){
+		SetChannel(i);
+		uint8_t value = ReadReg(NRF_REG_RPD);
+		firstHalf |= (value << i);
+#ifdef DEBUG_MODE
+		uart << "Channel: " << i << " value: " << value << endl;
+#endif
+	}
+
+	for(int i = 0; i < 64; i++){
+		SetChannel(64+i);
+		uint8_t value = ReadReg(NRF_REG_RPD);
+		secondHalf |= (value << i);
+	}
+
+	if(wasMode == nrf_tx_mode)
+		SetSleepTxMode();
 }
 
 void CNRFLib::CELow(){

@@ -42,7 +42,7 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 	nrf.AttachToSpiBus(HSPI_HOST);
 	
 	uint8_t buff[32] = {0};
-	uint8_t addr[5] = {231, 231, 231, 231, 231};
+	uint8_t addr[5] = {123, 123, 123, 123, 123};
 
 	if(argc == 1){
 		io << "Tx mode" << endl;
@@ -51,8 +51,21 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 			buff[i] = i;
 		}
 
-		nrf.Begin(nrf_tx_mode);
 		nrf.SetTxAddr(addr, 5);
+		nrf.SetPipeAddr(0, addr, 5);
+		nrf.Begin(nrf_tx_mode);
+
+		/* uint64_t channels1, channels2;
+		nrf.ScanChannels(channels1, channels2);
+
+		uart << "Channels result:" << endl;
+		for(int i = 0; i < 64; i++)
+			uart << "#" << i << " : " << (uint8_t)((channels1 >> i) & 1) << endl;
+
+		for(int i = 0; i < 64; i++)
+			uart << "#" << i+64 << " : " << (uint8_t)((channels2 >> i) & 1) << endl;
+
+		nrf.SetSleepTxMode(); */
 
 		int8_t result;
 		while(1){
@@ -65,8 +78,8 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 	} else {
 		io << "Rx mode" << endl;
 
-		nrf.Begin(nrf_rx_mode);
 		nrf.SetPipeAddr(0, addr, 5);
+		nrf.Begin(nrf_rx_mode);
 
 		while(1){
 			vTaskDelay(pdMS_TO_TICKS(1));

@@ -137,6 +137,12 @@ public:
 	/* Get Tx Addr (addr length must be 5 (in bytes) ) */
 	void GetTxAddr(uint8_t *pAddr);
 
+	/* Scans all 128 channels
+	 * Sets bit 0 when channel is free, bit 1 when channel is busy
+	 * Busy channel means there are noises more than -64dBm
+	 * It's better to use free channels */
+	void ScanChannels(uint64_t &firstHalf, uint64_t &secondHalf);
+
 #ifdef DEBUG_MODE
 	void PrintRegister(nrf_reg_config_t config);
 	void PrintRegister(nrf_reg_status_t status);
