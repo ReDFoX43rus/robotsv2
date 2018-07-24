@@ -49,6 +49,8 @@
 #define NRF_POWER_m6dBm			0b10
 #define NRF_POWER_0dBm			0b00
 
+#define NRF_REG_RPD				0x09
+
 #include <inttypes.h>
 
 /* Configuration register */

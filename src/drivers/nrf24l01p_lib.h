@@ -9,14 +9,16 @@
 #include <string.h>
 
 #ifndef DEBUG_MODE
-#define DEBUG_MODE
+// #define DEBUG_MODE
 #endif /* DEBUG_MODE */
 
 #ifdef DEBUG_MODE
 #include "uart.h"
 #endif
 
-#define MAX_PAYLOAD 32 // in bytes
+#define NRF_MAX_PAYLOAD		32 // in bytes
+#define NRF_ENABLE_CRC		1
+#define NRF_CRC_WIDTH		1
 
 /* nRF24L01 modes
  * rx - receive mode
@@ -136,6 +138,12 @@ public:
 
 	/* Get Tx Addr (addr length must be 5 (in bytes) ) */
 	void GetTxAddr(uint8_t *pAddr);
+
+	/* Scans all 128 channels
+	 * Sets bit 0 when channel is free, bit 1 when channel is busy
+	 * Busy channel means there are noises more than -64dBm
+	 * It's better to use free channels */
+	void ScanChannels(uint64_t &firstHalf, uint64_t &secondHalf);
 
 #ifdef DEBUG_MODE
 	void PrintRegister(nrf_reg_config_t config);
