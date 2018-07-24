@@ -5,6 +5,7 @@
         "ratio": "cpp",
         "system_error": "cpp",
         "type_traits": "cpp",
-        "*.contiki": "cpp"
+        "*.contiki": "cpp",
+        "array": "cpp"
     }
 }
