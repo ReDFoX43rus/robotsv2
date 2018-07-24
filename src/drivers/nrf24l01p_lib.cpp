@@ -47,6 +47,8 @@ void CNRFLib::Begin(nrf_mode_t mode){
 	for(int i = 0; i < 6; i++)
 		WriteReg(NRF_REG_RX_PW_P0, MAX_PAYLOAD);
 
+	SetDataRateAndPower(NRF_DATA_RATE_250k, NRF_POWER_0dBm);
+
 	FlushTX();
 	FlushRX();
 
@@ -146,11 +148,6 @@ int8_t CNRFLib::Send(uint8_t *pBuff, uint8_t length){
 	CELow();
 	FlushTX();
 
-	nrf_reg_status_t status = GetStatus();
-	status.tx_ds = 1;
-	status.max_rt = 1;
-	WriteReg(NRF_REG_STATUS, _TOUINT(status));
-
 	/* Setup as tx if needed and wakeup */
 	uint8_t tmp = ReadReg(NRF_REG_CONFIG);
 	nrf_reg_config_t cfg = *(nrf_reg_config_t*)&tmp;
@@ -167,6 +164,7 @@ int8_t CNRFLib::Send(uint8_t *pBuff, uint8_t length){
 	CELow();
 
 	/* Wait for success or fail */
+	nrf_reg_status_t status;
 	do{
 		status = GetStatus();
 		ets_delay_us(20);

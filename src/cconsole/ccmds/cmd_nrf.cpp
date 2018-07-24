@@ -42,7 +42,7 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 	nrf.AttachToSpiBus(HSPI_HOST);
 	
 	uint8_t buff[32] = {0};
-	uint8_t addr[5] = {255, 244, 233, 222, 211};
+	uint8_t addr[5] = {231, 231, 231, 231, 231};
 
 	if(argc == 1){
 		io << "Tx mode" << endl;
@@ -51,8 +51,8 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 			buff[i] = i;
 		}
 
-		nrf.SetTxAddr(addr, 5);
 		nrf.Begin(nrf_tx_mode);
+		nrf.SetTxAddr(addr, 5);
 
 		int8_t result;
 		while(1){
@@ -65,8 +65,8 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 	} else {
 		io << "Rx mode" << endl;
 
-		nrf.SetPipeAddr(0, addr, 5);
 		nrf.Begin(nrf_rx_mode);
+		nrf.SetPipeAddr(0, addr, 5);
 
 		while(1){
 			vTaskDelay(pdMS_TO_TICKS(1));
