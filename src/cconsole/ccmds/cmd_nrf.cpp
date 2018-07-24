@@ -3,20 +3,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// #include "drivers/rf24.h"
-// #include "drivers/nrf24l01.h"
-// #include "driver/spi_master.h"
-// #include <util/spi_builder.h>
-
-// #define SPI_SCLK 14
-// #define SPI_MISO 12
-// #define SPI_MOSI 13
-
-// static uint8_t addr[] = {0x1, 0x2, 0x3, 0x4, 0x5};
-
-// static RF24 nrf(GPIO_NUM_17, GPIO_NUM_16);
-// const uint64_t pipe = 0xDEADBEEF;
-
 #include "drivers/nrf24l01p_lib.h"
 #include <string.h>
 
@@ -42,7 +28,7 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 	nrf.AttachToSpiBus(HSPI_HOST);
 	
 	uint8_t buff[32] = {0};
-	uint8_t addr[5] = {123, 123, 123, 123, 123};
+	uint8_t addr[5] = {222, 111, 001, 100, 040};
 
 	if(argc == 1){
 		io << "Tx mode" << endl;
@@ -51,9 +37,9 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 			buff[i] = i;
 		}
 
+		nrf.Begin(nrf_tx_mode);
 		nrf.SetTxAddr(addr, 5);
 		nrf.SetPipeAddr(0, addr, 5);
-		nrf.Begin(nrf_tx_mode);
 
 		/* uint64_t channels1, channels2;
 		nrf.ScanChannels(channels1, channels2);
@@ -78,8 +64,8 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 	} else {
 		io << "Rx mode" << endl;
 
-		nrf.SetPipeAddr(0, addr, 5);
 		nrf.Begin(nrf_rx_mode);
+		nrf.SetPipeAddr(0, addr, 5);
 
 		while(1){
 			vTaskDelay(pdMS_TO_TICKS(1));
@@ -95,68 +81,4 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 			io << endl;
 		}
 	}
-
-	/* uint8_t pipe = 0;
-	uint8_t buff[32] = {0};
-
-	NRF24L01 nrf(0, GPIO_NUM_16, GPIO_NUM_17);
-	nrf.RxPipeSetup(pipe, addr, 32);
-
-	if(argc == 1){
-		io << "Tx mode" << endl;
-		while(1){
-			int r = rand() & 0xFF;
-			buff[0] = r;
-			io << "Sending " << r;
-			int8_t result = nrf.Send(addr, buff, 32);
-			io << " Result: " << result << endl;
-
-			vTaskDelay(pdMS_TO_TICKS(500));
-		}
-	} else {
-		io << "Recv mode" << endl;
-		while(1){
-			uint8_t len = nrf.Recv(&pipe, buff);
-			io << "Received " << len << " bytes, payload: " << buff[0] << endl;
-
-			vTaskDelay(pdMS_TO_TICKS(500));
-		}
-	} */
-
-	/* nrf.begin();
-	nrf.setRetries(15, 15);
-	nrf.setAutoAck(1);
-	nrf.setChannel(70);
-	nrf.setPALevel(RF24_PA_MAX);
-	nrf.setDataRate(RF24_1MBPS);
-	if(argc == 1){
-		io << "Tx mode" << endl;
-
-		nrf.openWritingPipe(pipe);
-		nrf.startListening();
-		uint8_t r;
-		bool result;
-		while(1){
-			r = rand() & 0xFF;
-			result = nrf.write(&r, 1);
-
-			io << "Sent: " << r << " result: " << result << endl;
-
-			vTaskDelay(pdMS_TO_TICKS(500));
-		}
-	} else {
-		io << "Rx mode" << endl;
-
-		nrf.openReadingPipe(1, pipe);
-		nrf.startListening();
-		uint8_t recv = 0;
-		while(1){
-			vTaskDelay(pdMS_TO_TICKS(500));
-
-			if(!nrf.available())
-				continue;
-
-			nrf.read(&recv, 1);
-			io << "Received: " << recv << endl;		}
-	} */
 }

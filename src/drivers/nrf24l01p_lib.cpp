@@ -45,11 +45,12 @@ void CNRFLib::Begin(nrf_mode_t mode){
 
 	/* Set payload width to each pipe to 32 bytes */
 	for(int i = 0; i < 6; i++)
-		WriteReg(NRF_REG_RX_PW_P0, MAX_PAYLOAD);
+		WriteReg(NRF_REG_RX_PW_P0, NRF_MAX_PAYLOAD);
 
 	FlushTX();
 	FlushRX();
 
+	WriteReg(NRF_REG_SETUP_ADDR_W, 0b11);
 	SetAutoRetransmission(10, 5);
 	SetChannel(77);
 	SetDataRateAndPower(NRF_DATA_RATE_250k, NRF_POWER_0dBm);
@@ -57,8 +58,8 @@ void CNRFLib::Begin(nrf_mode_t mode){
 	/* Setup config register */
 	nrf_reg_config_t cfg;
 	memset(&cfg, 0, sizeof(cfg));
-	cfg.en_crc = 1;
-	cfg.crco = 1;
+	cfg.en_crc = NRF_ENABLE_CRC;
+	cfg.crco = NRF_CRC_WIDTH;
 	cfg.pwr_up = mode == nrf_rx_mode;
 	cfg.prim_rx = mode == nrf_rx_mode;
 	WriteReg(NRF_REG_CONFIG, _TOUINT(cfg));
@@ -201,21 +202,21 @@ int8_t CNRFLib::Send(uint8_t *pBuff, uint8_t length){
 }
 
 void CNRFLib::WriteTxPayload(uint8_t *pBuff, uint8_t length){
-	assert(length <= MAX_PAYLOAD && "Payload width is limited to 32 bytes");
+	assert(length <= NRF_MAX_PAYLOAD && "Payload width is limited to 32 bytes");
 
-	uint8_t *tmp = (uint8_t*)malloc(MAX_PAYLOAD);
-	memset(tmp, 1, MAX_PAYLOAD);
+	uint8_t *tmp = (uint8_t*)malloc(NRF_MAX_PAYLOAD);
+	memset(tmp, 1, NRF_MAX_PAYLOAD);
 	memcpy(tmp, pBuff, length);
 
-	WriteBytes(NRF_CMD_W_TX_PAYLOAD, tmp, MAX_PAYLOAD);
+	WriteBytes(NRF_CMD_W_TX_PAYLOAD, tmp, NRF_MAX_PAYLOAD);
 	free(tmp);
 }
 
 void CNRFLib::ReadRxPayload(uint8_t *pBuff, uint8_t length){
-	assert(length <= MAX_PAYLOAD && "Payload width is limited to 32 bytes");
+	assert(length <= NRF_MAX_PAYLOAD && "Payload width is limited to 32 bytes");
 
-	uint8_t *tmp = (uint8_t*)malloc(MAX_PAYLOAD);
-	ReadBytes(NRF_CMD_R_RX_PAYLOAD, tmp, MAX_PAYLOAD);
+	uint8_t *tmp = (uint8_t*)malloc(NRF_MAX_PAYLOAD);
+	ReadBytes(NRF_CMD_R_RX_PAYLOAD, tmp, NRF_MAX_PAYLOAD);
 	memcpy(pBuff, tmp, length);
 	free(tmp);
 }
