@@ -514,6 +514,9 @@ void *interpreter(void* pcPnt)
 				pin = mem[x--];
 				sensortype = mem[x];
 
+				if(pin >= 32 && pin <= 35)
+					pin -= 28;
+
 				mem[x] = handle_sensor(sensortype, &pin);
 				if(mem[x] == -0x30)
 					runtimeerr(robotsv2_wrong_sensor_type, sensortype, 0);
