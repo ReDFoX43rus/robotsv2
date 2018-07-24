@@ -57,7 +57,7 @@ void CServo::Start(side_t side, direction_t direction, int power){
 		}
 	}
 	else{
-		channel = LEDC_CHANNEL_0;//LEDC_CHANNEL_1;
+		channel = LEDC_CHANNEL_1;
 		if (direction == FORWARD){
 			gpio_set_level(m_DIRB, 0);
 		}

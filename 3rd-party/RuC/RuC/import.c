@@ -497,7 +497,7 @@ void *interpreter(void* pcPnt)
 				motor_power = mem[x--];
 				motor_n = mem[x--];
 
-				init_servo(22, 21, 12, 13);
+				init_servo(22, 21, 17, 13); //(22, 21, 12, 13);
 				servo_power(motor_n, motor_power);
 			}
 				break;

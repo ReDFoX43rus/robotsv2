@@ -115,6 +115,19 @@ inline void crash_sensor_callback(void*){
 }
 
 
+inline bool is_pin_channel(int pin){
+	int i = 0;
+	while(i < 6 && ledc_channels[i] != -1 && ledc_channels[i] != pin){
+		i++;
+	}
+
+	if (i >= 6 || ledc_channels[i] == -1) {
+		return false;
+	}
+
+	return true;
+}
+
 inline ledc_channel_t pin_to_channel(int pin){
 	if (ledc_channels[0] == -1){
 		ledc_timer_config_t ledc_timer;
@@ -153,7 +166,7 @@ inline ledc_channel_t pin_to_channel(int pin){
 }
 
 extern "C" void set_voltage(int pin, int level){
-	if (level > 0 && level < 255){
+	if (is_pin_channel(pin) || (level > 0 && level < 255)){
 		ledc_channel_t channel = pin_to_channel(pin);
 
 		if (channel != LEDC_CHANNEL_0) {
