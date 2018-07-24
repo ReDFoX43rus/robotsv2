@@ -16,10 +16,10 @@ void LM35::ChangePin(int pin){
 	if(pin == m_pin)
 		return;
 
-	adc->SetupAdc(pin, 1500);
+	adc->SetupAdc(pin, 1100);
 	m_pin = pin;
 }
 
 int LM35::GetTemperature() {
-	return (adc->GetVoltage(m_pin) / 4095.0) * 3.3 * 1000 / 10;
+	return (adc->GetVoltage(m_pin) / 4095.0) * 3.3 * 100;
 }
