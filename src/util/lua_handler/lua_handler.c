@@ -100,6 +100,8 @@ static int lua_get_count_sensor_args(int id)
 			return 1;
 		case SENSOR_FLAME_DIG:
 			return 1;
+		case SENSOR_LM35:
+			return 1;
 		default:
 			return 0;
 	}

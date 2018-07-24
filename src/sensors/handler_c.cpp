@@ -12,6 +12,7 @@
 #include "hcsr04.h"
 #include "line_dig.h"
 #include "sharp_2y0a21.h"
+#include "lm35.h"
 
 #include "uart.h"
 
@@ -101,6 +102,11 @@ extern "C" int handle_sensor(int sensor_id, const int *data){
 			static SHARP_2Y0A21 sharp_sensor;
 			sharp_sensor.ChangePin(data[0]);
 			return sharp_sensor.GetDistance();
+		}
+		case SENSOR_LM35: {
+			static LM35 temp_sensor;
+			temp_sensor.ChangePin(data[0]);
+			return temp_sensor.GetTemperature();
 		}
 
 		default:
