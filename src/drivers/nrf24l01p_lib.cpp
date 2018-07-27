@@ -9,6 +9,8 @@
 CNRFLib::~CNRFLib(){
 	if(isAttached)
 		spi_bus_remove_device(m_SpiDevice);
+
+	DetachInterruptHandler();
 }
 
 esp_err_t CNRFLib::AttachToSpiBus(spi_host_device_t spiBus){
@@ -58,6 +60,10 @@ void CNRFLib::Begin(nrf_mode_t mode){
 	/* Setup config register */
 	nrf_reg_config_t cfg;
 	memset(&cfg, 0, sizeof(cfg));
+	/* Note that we have to set 0 to enable interrupt, and 1 to disable it */
+	cfg.mask_max_rt = !NRF_MRT_INTR_ENABLE;
+	cfg.mask_rx_dr = !NRF_DR_INTR_ENABLE;
+	cfg.mask_tx_ds = !NRF_DS_INTR_ENABLE;
 	cfg.en_crc = NRF_ENABLE_CRC;
 	cfg.crco = NRF_CRC_WIDTH;
 	cfg.pwr_up = mode == nrf_rx_mode;
@@ -405,6 +411,36 @@ void CNRFLib::CSLow(){
 void CNRFLib::CSHigh(){
 	gpio_set_direction(m_CS, GPIO_MODE_OUTPUT);
 	gpio_set_level(m_CS, 1);
+}
+
+void CNRFLib::AttachInterruptHandler(gpio_num_t irq, gpio_isr_t callbackFunc, void *pParam){
+	assert(!m_IsInterruptHandlerAttached && "There is only 1 interrupt handler allowed");
+	m_Irq = irq;
+
+	gpio_intr_enable(irq);
+	gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
+	gpio_set_intr_type(irq, GPIO_INTR_NEGEDGE);
+	gpio_isr_handler_add(irq, callbackFunc, pParam == NULL ? this : pParam);
+
+	m_IsInterruptHandlerAttached = true;
+
+#ifdef DEBUG_MODE
+	uart << "Interrupt handler attached to gpio: " << (uint8_t)irq << endl;
+#endif
+}
+void CNRFLib::DetachInterruptHandler(){
+	if(!m_IsInterruptHandlerAttached)
+		return;
+
+	gpio_intr_disable(m_Irq);
+	gpio_isr_handler_remove(m_Irq);
+	gpio_uninstall_isr_service();
+
+#ifdef DEBUG_MODE
+	uart << "Interrupt handler detached" << endl;
+#endif
+
+	m_IsInterruptHandlerAttached = false;
 }
 
 #ifdef DEBUG_MODE

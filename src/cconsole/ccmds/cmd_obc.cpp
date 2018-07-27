@@ -2,56 +2,75 @@
 
 #include "iobase/iobase.h"
 #include "userspace/obc/controller.h"
+#include "userspace/manager/manager.h"
 #include "string.h"
 
-static CController controller(GPIO_NUM_13, GPIO_NUM_14, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17, GPIO_NUM_18, GPIO_NUM_19, GPIO_NUM_12);
-
-enum {
-	CMD_OPEN_CAR,
-	CMD_CLOSE_CAR,
-	CMD_OPEN_WINDOWS,
-	CMD_CLOSE_WINDOWS,
-	CMD_OPEN_LEFT_DOOR,
-	CMD_CLOSE_LEFT_DOOR,
-	CMD_OPEN_RIGHT_DOOR,
-	CMD_CLOSE_RIGHT_DOOR
-};
-
+static CController controller;
+static bool managerInited = false;
+static CManager manager(GPIO_NUM_25, GPIO_NUM_26, GPIO_NUM_27);
 void CmdObcHandler(CIOBase &io, int argc, char *argv[]){
-	if(argc < 2){
-		io << "Usage: " << argv[0] << " <cmd>" << endl;
+
+	if(argc == 1){
+		controller.SetupHSPI();
+		controller.SetupNrf();
+		io << "Controller installed" << endl;
 		return;
 	}
 
-	char tmp = argv[1][0];
-	uint8_t cmd = tmp - '0';
+	if(!managerInited){
+		spi_bus_config_t buscfg;
+		memset(&buscfg, 0, sizeof(buscfg));
 
-	switch(cmd){
-		case CMD_OPEN_CAR:
-			controller.OpenCar();
-			break;
-		case CMD_CLOSE_CAR:
-			controller.CloseCar();
-			break;
-		case CMD_OPEN_WINDOWS:
-			controller.OpenWindows();
-			break;
-		case CMD_CLOSE_WINDOWS:
-			controller.CloseWindows();
-			break;
-		case CMD_OPEN_LEFT_DOOR:
-			controller.OpenDoor(CController::LEFT);
-			break;
-		case CMD_CLOSE_LEFT_DOOR:
-			controller.CloseDoor(CController::LEFT);
-			break;
-		case CMD_OPEN_RIGHT_DOOR:
-			controller.OpenDoor(CController::RIGHT);
-			break;
-		case CMD_CLOSE_RIGHT_DOOR:
-			controller.CloseDoor(CController::RIGHT);
-			break;
-		default:
-			io << "Unknown cmd" << endl;
+		buscfg.miso_io_num = SPI_MISO;
+		buscfg.mosi_io_num = SPI_MOSI;
+		buscfg.sclk_io_num = SPI_SCLK;
+		buscfg.quadhd_io_num = -1;
+		buscfg.quadwp_io_num = -1;
+		buscfg.max_transfer_sz = 4096;
+
+		esp_err_t err = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+		assert(err == ESP_OK);
+
+		manager.SetupNrf(HSPI_HOST, GPIO_NUM_16, GPIO_NUM_17);
+		manager.SetupButtons();
+		managerInited = true;
+
+		io << "Manager inited" << endl;
+		return;
 	}
+
+	io << "Manager already inited" << endl;
+
+	/* if(!nrfInited){	
+		spi_bus_config_t buscfg;
+		memset(&buscfg, 0, sizeof(buscfg));
+
+		buscfg.miso_io_num = SPI_MISO;
+		buscfg.mosi_io_num = SPI_MOSI;
+		buscfg.sclk_io_num = SPI_SCLK;
+		buscfg.quadhd_io_num = -1;
+		buscfg.quadwp_io_num = -1;
+		buscfg.max_transfer_sz = 4096;
+
+		esp_err_t err = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+		assert(err == ESP_OK);
+
+		nrf.AttachToSpiBus(HSPI_HOST);
+		nrf.Begin(nrf_tx_mode);
+		nrf.SetTxAddr(g_NrfAddr, 5);
+		nrf.SetPipeAddr(0, g_NrfAddr, 5);
+
+		nrfInited = true;
+	}
+
+	char *cmd = argv[1];
+	uint8_t buffer[NRF_MAX_PAYLOAD] = {0};
+
+	if(!strcmp(cmd, "open")){
+		buffer[0] = CMD_OPEN_DOORS;
+		nrf.Send(buffer, NRF_MAX_PAYLOAD);
+	} else if(!strcmp(cmd, "close")){
+		buffer[0] = CMD_CLOSE_DOORS;
+		nrf.Send(buffer, NRF_MAX_PAYLOAD);
+	}*/
 }

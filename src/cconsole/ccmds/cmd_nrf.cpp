@@ -10,6 +10,36 @@
 #define SPI_MISO 12
 #define SPI_MOSI 13
 
+#include "uart.h"
+
+static void ReadTask(void *data){
+	if(data == NULL)
+		return;
+
+	uart << "Reading rx" << endl;
+	CNRFLib *pNrf = (CNRFLib*)data;
+	nrf_reg_status_t status =  pNrf->GetStatus();
+	if(status.rx_dr){
+		uint8_t buffer[32] = {0};
+		pNrf->Read(buffer, 32);
+
+		uart << "Received: ";
+		for(int i = 0; i < 32; i++)
+			uart << buffer[i] << " ";
+		uart << endl;
+	}
+
+	vTaskDelete(NULL);
+}
+
+static void IrqHandler(void* data){
+	uart << "Handling interrupt" << endl;
+	
+	xTaskCreatePinnedToCore(ReadTask, "nrf_read_task", 4096, data, 4, NULL, 0);
+}
+
+CNRFLib nrf(GPIO_NUM_16, GPIO_NUM_17);
+
 void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 	spi_bus_config_t buscfg;
 	memset(&buscfg, 0, sizeof(buscfg));
@@ -24,7 +54,6 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 	esp_err_t err = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
 	assert(err == ESP_OK);
 
-	CNRFLib nrf(GPIO_NUM_16, GPIO_NUM_17);
 	nrf.AttachToSpiBus(HSPI_HOST);
 	
 	uint8_t buff[32] = {0};
@@ -67,7 +96,17 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 		nrf.Begin(nrf_rx_mode);
 		nrf.SetPipeAddr(0, addr, 5);
 
-		while(1){
+		memset(addr, 0, 5 * sizeof(uint8_t));
+		nrf.GetPipeAddr(0, addr);
+		io << "Pipe addr: ";
+		for(int i = 0; i < 5; i++)
+			io << addr[i] << " ";
+		io << endl;
+
+		nrf.AttachInterruptHandler(GPIO_NUM_4, IrqHandler);
+
+
+		/* while(1){
 			vTaskDelay(pdMS_TO_TICKS(1));
 
 			if(!nrf.IsRxDataAvailable())
@@ -79,6 +118,6 @@ void CmdNrfHandler(CIOBase &io, int argc, char *argv[]){
 				io << buff[i] << " ";
 			}
 			io << endl;
-		}
+		} */
 	}
 }

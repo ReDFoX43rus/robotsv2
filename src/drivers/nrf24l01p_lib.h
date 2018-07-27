@@ -16,9 +16,12 @@
 #include "uart.h"
 #endif
 
-#define NRF_MAX_PAYLOAD		32 // in bytes
+#define NRF_MAX_PAYLOAD		32	// in bytes
 #define NRF_ENABLE_CRC		1
 #define NRF_CRC_WIDTH		1
+#define NRF_DR_INTR_ENABLE	1	// data received interrupt
+#define NRF_DS_INTR_ENABLE	0	// data sent interrupt
+#define NRF_MRT_INTR_ENABLE	0	// max retries interrupt
 
 /* nRF24L01 modes
  * rx - receive mode
@@ -53,7 +56,10 @@ static inline uint8_t spi_transfer_byte(uint8_t byte, spi_device_handle_t device
  * And payload width is set to MAX_PAYLOAD in all pipes */
 class CNRFLib{
 public:
-	CNRFLib(gpio_num_t cs, gpio_num_t ce) : m_CS(cs), m_CE(ce) {}
+	CNRFLib(gpio_num_t cs, gpio_num_t ce) : m_CS(cs), m_CE(ce) {
+		isAttached = false;
+		m_IsInterruptHandlerAttached = false;
+	}
 	~CNRFLib();
 
 	/* Attach our device to spi bus
@@ -145,6 +151,18 @@ public:
 	 * It's better to use free channels */
 	void ScanChannels(uint64_t &firstHalf, uint64_t &secondHalf);
 
+	/* Attach interrupt handler
+	 * If param is null callback function gets pointer to this class as agrument
+	 * If param is not null callback function gets param as argument
+	 * 
+	 * Note: only 1 handler allowed to attach */
+	void AttachInterruptHandler(gpio_num_t irq, gpio_isr_t callbackFunc, void *pParam = NULL);
+
+	/* Detach interrupt handler */
+	void DetachInterruptHandler();
+
+	bool IsInterruptHandlerAttached() {return m_IsInterruptHandlerAttached; }
+
 #ifdef DEBUG_MODE
 	void PrintRegister(nrf_reg_config_t config);
 	void PrintRegister(nrf_reg_status_t status);
@@ -153,11 +171,13 @@ public:
 private:
 	gpio_num_t m_CS;
 	gpio_num_t m_CE;
+	gpio_num_t m_Irq;
 
 	spi_device_handle_t m_SpiDevice;
 
 	bool isAttached;
 	nrf_mode_t m_Mode;
+	bool m_IsInterruptHandlerAttached;
 
 	uint8_t ReadReg(uint8_t reg);
 	uint8_t WriteReg(uint8_t reg, uint8_t value);
