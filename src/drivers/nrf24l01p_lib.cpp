@@ -39,8 +39,11 @@ void CNRFLib::Begin(nrf_mode_t mode){
 
 	DELAY_MS(5);
 
-	/* Enable each pipes for receiving */
-	WriteReg(NRF_REG_ENRXADDR, 0x3F);
+	/* Enable pipe0 for receiving */
+	nrf_reg_en_rxaddr_t rxaddr;
+	memset(&rxaddr, 0, sizeof(rxaddr));
+	rxaddr.enrxaddr_pipe0 = 1;
+	WriteReg(NRF_REG_ENRXADDR, _TOUINT(rxaddr));
 
 	/* Enabled auto acknowledgement */
 	WriteReg(NRF_REG_ENAA, 0x3F);

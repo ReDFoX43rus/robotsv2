@@ -6,8 +6,10 @@
 #include "string.h"
 
 static CController controller;
-static bool managerInited = false;
+// static bool managerInited = false;
 static CManager manager(GPIO_NUM_25, GPIO_NUM_26, GPIO_NUM_27);
+static bool nrfInited = false;
+static CNRFLib nrf(GPIO_NUM_16, GPIO_NUM_17);
 void CmdObcHandler(CIOBase &io, int argc, char *argv[]){
 
 	if(argc == 1){
@@ -17,7 +19,7 @@ void CmdObcHandler(CIOBase &io, int argc, char *argv[]){
 		return;
 	}
 
-	if(!managerInited){
+	/* if(!managerInited){
 		spi_bus_config_t buscfg;
 		memset(&buscfg, 0, sizeof(buscfg));
 
@@ -39,9 +41,9 @@ void CmdObcHandler(CIOBase &io, int argc, char *argv[]){
 		return;
 	}
 
-	io << "Manager already inited" << endl;
+	io << "Manager already inited" << endl; */
 
-	/* if(!nrfInited){	
+	if(!nrfInited){	
 		spi_bus_config_t buscfg;
 		memset(&buscfg, 0, sizeof(buscfg));
 
@@ -72,5 +74,5 @@ void CmdObcHandler(CIOBase &io, int argc, char *argv[]){
 	} else if(!strcmp(cmd, "close")){
 		buffer[0] = CMD_CLOSE_DOORS;
 		nrf.Send(buffer, NRF_MAX_PAYLOAD);
-	}*/
+	}
 }

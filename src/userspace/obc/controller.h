@@ -32,66 +32,44 @@
 /* Pins to interact with car */
 #define OBC_PIN_DOOR_OPEN GPIO_NUM_18
 #define OBC_PIN_DOOR_CLOSE GPIO_NUM_19
+#define OBC_PIN_WINDOWS_CLOSE GPIO_NUM_27
 #define OBC_PIN_GND_RELAY GPIO_NUM_5
+
+typedef enum{
+	ACS_TYPE_5A,
+	ACS_TYPE_20A,
+	ACS_TYPE_30A
+} acs_type_t;
 
 class CController {
 public:
 
-	CController(/* gpio_num_t leftDoorClose, gpio_num_t rightDoorClose, gpio_num_t leftDoorOpen, gpio_num_t rightDoorOpen,
-				gpio_num_t  leftWindowClose, gpio_num_t rightWindowClose, gpio_num_t leftWindowOpen, gpio_num_t rightWindowOpen */);
+	CController();
 	~CController();
 
 	void SetupHSPI();
 	void SetupNrf();
-
-	/* Since my car has only 2 doors
-	 * I dont need specify front or rear door/window */
-
-	/* enum ESIDE{
-		LEFT,
-		RIGHT
-	};
-
-	typedef ESIDE side_t; */
-
-	/* void OpenCar();
-	void CloseCar();
-
-	void OpenWindows();
-	void CloseWindows();
-
-	void OpenDoor(side_t side);
-	void CloseDoor(side_t side); */
-
 private:
-	/* It takes a lot of time to open/close window
-	 * so we need a dedicated thread to do this */
-	static void WindowTriggerTask(void *arg);
-
 	/* Helping function for open/closing doors */
 	static void TriggerPin(gpio_num_t pin, uint32_t delay_ms);
 
 	static void NrfIrqHandler(void *data);
 	static void NRfIrqReadTask(void *data);
 
+	static void HandleCmdTask(void *data);
+	static TaskHandle_t m_hctTask;
+
 	CNRFLib *m_pNrf;
 
 	void OpenDoors();
 	void CloseDoors();
 
-	void GroundRelayOff();
-	void GroundRelayOn();
-
-	/* Pins connected to doors' lock */
-	// gpio_num_t m_LeftDoorClosePin;
-	// gpio_num_t m_RightDoorClosePin;
-	// gpio_num_t m_LeftDoorOpenPin;
-	// gpio_num_t m_RightDoorOpenPin;
-
-	// gpio_num_t m_LeftWindowClosePin;
-	// gpio_num_t m_RightWindowClosePin;
-	// gpio_num_t m_LeftWindowOpenPin;
-	// gpio_num_t m_RightWindowOpenPin;
+	int MeasureCurrent(acs_type_t type);
 };
+
+typedef struct{
+	CController* controller;
+	controller_cmds_t cmd;	
+} handle_cmd_data_t;
 
 #endif /* USERSPACE_OBC_CONTROLLER_H */
