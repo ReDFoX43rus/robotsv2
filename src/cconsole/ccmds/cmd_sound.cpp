@@ -91,8 +91,13 @@ static enum mad_flow error(void *data, struct mad_stream *stream, struct mad_fra
 	return MAD_FLOW_CONTINUE;
 }
 
+static int lastRate = 0;
 extern "C" void set_dac_sample_rate(int rate)
 {
+	if(rate == lastRate)
+		return;
+
+	lastRate = rate;
 	i2s_set_sample_rates(I2S_NUM_0, rate);
 }
 
