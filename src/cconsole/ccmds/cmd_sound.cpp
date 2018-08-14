@@ -7,151 +7,141 @@
 #include "freertos/queue.h"
 #include "driver/i2s.h"
 
-#define CCCC(c1, c2, c3, c4)    ((c4 << 24) | (c3 << 16) | (c2 << 8) | c1)
+#include "drivers/mad/mad.h"
+#include "drivers/mad/stream.h"
+#include "drivers/mad/synth.h"
+#include "drivers/mad/frame.h"
 
-/* these are data structures to process wav file */
-typedef enum headerState_e
-{
-	HEADER_RIFF,
-	HEADER_FMT,
-	HEADER_DATA,
-	DATA
-} headerState_t;
+// The theoretical maximum frame size is 2881 bytes,
+// MPEG 2.5 Layer II, 8000 Hz @ 160 kbps, with a padding slot plus 8 byte MAD_BUFFER_GUARD.
+#define MAX_FRAME_SIZE (2889)
 
-typedef struct wavRiff_s
-{
-	uint32_t chunkID;
-	uint32_t chunkSize;
-	uint32_t format;
-} wavRiff_t;
+// The theoretical minimum frame size of 24 plus 8 byte MAD_BUFFER_GUARD.
+#define MIN_FRAME_SIZE (32)
 
-typedef struct wavProperties_s
-{
-	uint32_t chunkID;
-	uint32_t chunkSize;
-	uint16_t audioFormat;
-	uint16_t numChannels;
-	uint32_t sampleRate;
-	uint32_t byteRate;
-	uint16_t blockAlign;
-	uint16_t bitsPerSample;
-} wavProperties_t;
-/* variables hold file, state of process wav file and wav file properties */
-headerState_t state = HEADER_RIFF;
-wavProperties_t wavProps;
+typedef struct mad_stream mad_stream_t;
+typedef struct mad_frame mad_frame_t;
+typedef struct mad_synth mad_synth_t;
 
-//i2s configuration
-int i2s_num = 0; // i2s port number
-static i2s_config_t i2s_config = {
-	.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN),
-	.sample_rate = 48000,
-	.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT, /* the DAC module will only take the 8bits from MSB */
-	.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-	.communication_format = (i2s_comm_format_t)I2S_COMM_FORMAT_I2S_MSB,
-	.intr_alloc_flags = 0, // default interrupt priority
-	.dma_buf_count = 4,
-	.dma_buf_len = 512,
-	.use_apll = 0
-};
-//
-/* write sample data to I2S */
-int i2s_write_sample_nb(uint8_t sample)
+static uint64_t buf_underrun_cnt;
+
+static enum mad_flow input(CFile *file, struct mad_stream *stream, uint8_t *buff, uint32_t buffSize)
 {
-	return i2s_write_bytes((i2s_port_t)i2s_num, (const char *)&sample, sizeof(uint8_t), 100);
-}
-/* read 4 bytes of data from wav file */
-int read4bytes(CFile file, uint32_t *chunkId)
-{
-	// int n = file.read((uint8_t *)chunkId, sizeof(uint32_t));
-	return file.GetString((char*)chunkId, sizeof(uint32_t));
+	// next_frame is the position MAD is interested in resuming from
+	uint32_t bytes_consumed = stream->next_frame - stream->buffer;
+
+	uart << "Bytes consumed: " << bytes_consumed << endl;
+
+	uint32_t diff = file->GetSize() - bytes_consumed;
+	if(diff == 0)
+		return MAD_FLOW_STOP;
+
+	uint32_t len = diff < buffSize ? diff : buffSize;
+	file->GetString((char*)buff, len);
+
+	// Okay, let MAD decode the buffer.
+	mad_stream_buffer(stream, buff, len);
+	return MAD_FLOW_CONTINUE;
 }
 
-int readbyte(CFile file, uint8_t *chunkId)
+//Routine to print out an error
+static enum mad_flow error(void *data, struct mad_stream *stream, struct mad_frame *frame)
 {
-	// int n = file.read((uint8_t *)chunkId, sizeof(uint8_t));
-	return file.GetString((char*)chunkId, sizeof(char));
+	// printf("dec err 0x%04x (%s)\n", stream->error, mad_stream_errorstr(stream));
+	uart << "Decode error: " << stream->error << " : " << mad_stream_errorstr(stream) << endl;
+	return MAD_FLOW_CONTINUE;
 }
 
-/* these are function to process wav file */
-int readRiff(CFile file, wavRiff_t *wavRiff)
+extern "C" void set_dac_sample_rate(int rate)
 {
-	// int n = file.read((uint8_t *)wavRiff, sizeof(wavRiff_t));
-	return file.GetString((char*)wavRiff, sizeof(wavRiff_t));
-}
-int readProps(CFile file, wavProperties_t *wavProps)
-{
-	// int n = file.read((uint8_t *)wavProps, sizeof(wavProperties_t));
-	return file.GetString((char*)wavProps, sizeof(wavProperties_t));
 }
 
-void CmdSoundHandler(CIOBase &io, int argc, char *argv[]){
+/* render callback for the libmad synth */
+extern "C" void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels)
+{
+	uint32_t len = num_samples * sizeof(short) * num_channels;
+	// render_samples((char *)sample_buff_ch0, len, &mad_buffer_fmt);
+
+	return;
+}
+
+void CmdSoundHandler(CIOBase &io, int argc, char *argv[])
+{
 	const char *filename = argv[1];
 
+	FILE *f = fopen(filename, "r");
+	if(!f){
+		io << "Cannot open file via C" << endl;
+		return;
+	}
+	fclose(f);
+
 	CFile root(filename, FM_READ);
-	if (root.IsOpened())
+	if (!root.IsOpened())
 	{
-		int c = 0;
-		int n;
-		while (root.GetBufferedDataLength())
+		io << "Cannot open file: " << filename << endl;
+		return;
+	}
+
+	int ret;
+	struct mad_stream *stream;
+	struct mad_frame *frame;
+	struct mad_synth *synth;
+
+	//Allocate structs needed for mp3 decoding
+	stream = (mad_stream_t *)malloc(sizeof(struct mad_stream));
+	frame = (mad_frame_t *)malloc(sizeof(struct mad_frame));
+	synth = (mad_synth_t *)malloc(sizeof(struct mad_synth));
+	uint8_t *buf = (uint8_t *)malloc(MAX_FRAME_SIZE);
+
+	assert(stream && frame && synth && buf);
+
+	buf_underrun_cnt = 0;
+
+	io << "Starting..." << endl;
+
+	mad_stream_init(stream);
+	mad_frame_init(frame);
+	mad_synth_init(synth);
+
+	while (1)
+	{
+		// calls mad_stream_buffer internally
+		if (input(&root, stream, buf, MAX_FRAME_SIZE) == MAD_FLOW_STOP)
 		{
-			switch (state)
-			{
-			case HEADER_RIFF:
-				wavRiff_t wavRiff;
-				n = readRiff(root, &wavRiff);
-				if (n == sizeof(wavRiff_t))
-				{
-					if (wavRiff.chunkID == CCCC('R', 'I', 'F', 'F') && wavRiff.format == CCCC('W', 'A', 'V', 'E'))
-					{
-						state = HEADER_FMT;
-						io << "HEADER_RIFF" << endl;
-					}
-				}
-				break;
-			case HEADER_FMT:
-				n = readProps(root, &wavProps);
-				io << "HEADER_FMT: received: " << n << " expected: " << (int)sizeof(wavProperties_t) << endl;
-				if (n == sizeof(wavProperties_t))
-				{
-					state = HEADER_DATA;
-				}
-				break;
-			case HEADER_DATA:
-				uint32_t chunkId, chunkSize;
-				n = read4bytes(root, &chunkId);
-				if (n == 4)
-				{
-					if (chunkId == CCCC('d', 'a', 't', 'a'))
-					{
-						io << "HEADER_DATA" << endl;
-					}
-				}
-				n = read4bytes(root, &chunkSize);
-				if (n == 4)
-				{
-					io << "Prepare data" << endl;
-					state = DATA;
-				}
-				//initialize i2s with configurations above
-				i2s_driver_install((i2s_port_t)i2s_num, &i2s_config, 0, NULL);
-				i2s_set_pin((i2s_port_t)i2s_num, NULL);
-				//set sample rates of i2s to sample rate of wav file
-				i2s_set_sample_rates((i2s_port_t)i2s_num, wavProps.sampleRate);
-				break;
-			/* after processing wav file, it is time to process music data */
-			case DATA:
-				uint8_t data;
-				n = readbyte(root, &data);
-				i2s_write_sample_nb(data);
-				break;
-			}
+			break;
 		}
-		root.Close();
+
+		// decode frames until MAD complains
+		while (1)
+		{
+
+			// if(player->decoder_command == CMD_STOP) {
+			//     goto abort;
+			// }
+
+			// returns 0 or -1
+			ret = mad_frame_decode(frame, stream);
+			if (ret == -1)
+			{
+				if (!MAD_RECOVERABLE(stream->error))
+				{
+					//We're most likely out of buffer and need to call input() again
+					break;
+				}
+				error(NULL, stream, frame);
+				continue;
+			}
+			mad_synth_frame(synth, frame);
+		}
+		// ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 	}
-	else
-	{
-		io << "Error opening file" << endl;
-	}
-	i2s_driver_uninstall((i2s_port_t)i2s_num); //stop & destroy i2s driver
+
+	free(stream);
+	free(frame);
+	free(synth);
+	free(buf);
+
+	root.Close();
 	io << "Done" << endl;
 }

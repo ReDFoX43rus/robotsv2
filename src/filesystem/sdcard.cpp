@@ -41,7 +41,7 @@ CSDCard::CSDCard(int miso, int mosi, int clk, int cs, int wp, size_t maxFiles){
     // formatted in case when mounting fails.
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = true,
-        .max_files = 5,
+        .max_files = 16,
         .allocation_unit_size = 16 * 1024
     };
 
