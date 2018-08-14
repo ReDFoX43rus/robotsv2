@@ -33,6 +33,7 @@ CSDCard::CSDCard(int miso, int mosi, int clk, int cs, int wp, size_t maxFiles){
 	const char *TAG = "SDCARD";
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
+	slot_config.gpio_miso = GPIO_NUM_4;
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
 

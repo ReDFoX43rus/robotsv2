@@ -104,21 +104,24 @@ extern "C" void render_sample_block(short *sample_buff_ch0, short *sample_buff_c
 
 	uint16_t *samples = (uint16_t*)sample_buff_ch0;
 	for(int i = 0; i < num_samples; i++){
-		// samples[i] += 0x8000;
-		// samples[num_samples + i] += 0x8000;
+		// samples[i] -= 0x8000 - 1;
+		// samples[num_samples + i] -= 0x8000 - 1;
 
-		tmp[i] = sample_buff_ch0[i] << 16;
-		tmp[i] |= sample_buff_ch0[num_samples + i];
+		// sample_buff_ch0[i] += 0x8000;
+		// sample_buff_ch0[num_samples + i] += 0x8000;
+
+		tmp[i] = (uint32_t)(sample_buff_ch0[i]) << 16;
+		// tmp[i] |= (uint32_t)sample_buff_ch0[num_samples + i];
 	}
 
 	uint32_t len = num_samples * sizeof(uint32_t);
 
 	size_t written, total = 0;
 	do{
-		// i2s_write(I2S_NUM_0, ((char*)tmp) + total, len - total, &written, 100);
-		i2s_write(I2S_NUM_0, samples + total, num_samples * 2 - total, &written, 100);
+		i2s_write(I2S_NUM_0, ((char*)tmp) + total, len - total, &written, pdMS_TO_TICKS(10));
+		// i2s_write(I2S_NUM_0, ((char*)sample_buff_ch0) + total, num_samples * 4 - total, &written, 100);
 		total += written;
-	} while(total < num_samples * 2);
+	} while(total < len);
 
 	free(tmp);
 	return;
